@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Weakling - Admin</title>
+  <link rel="stylesheet" href="css/mafia-theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* LOGIN MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 11, 13, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 50;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--r-md);
+      background: rgba(139, 0, 0, 0.12);
+      border: 1px solid rgba(139, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.25rem 0;
+    }
+
+    @media (min-width: 768px) {
+      .sidebar { display: flex; }
+    }
+
+    .sidebar-top {
+      padding: 0 1rem;
+    }
+
+    .sidebar-brand {
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand h1 {
+      font-family: var(--font-title);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .sidebar-brand span {
+      font-size: 0.65rem;
+      color: var(--text-lo);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .sidebar-status-box {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+
+    .sidebar-status-box .status-label {
+      font-size: 0.65rem;
+      color: var(--text-lo);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      display: block;
+    }
+
+    .sidebar-status-box .status-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-hi);
+      margin-top: 0.25rem;
+      display: block;
+    }
+
+    .sidebar-bottom {
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .main-header h2 {
+      font-family: var(--font-title);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .main-header p {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+      margin-top: 2px;
+    }
+
+    .main-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.875rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1rem 1.125rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+
+    .stat-value {
+      font-family: var(--font-title);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-hi);
+      margin-top: 0.5rem;
+      line-height: 1;
+    }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.875rem;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+
+    /* POLL CARDS */
+    .poll-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+
+    .poll-card.poll-active {
+      border-color: var(--maroon-bright);
+    }
+
+    .poll-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .poll-scene-label {
+      font-family: var(--font-title);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .poll-title-label {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+    }
+
+    .poll-card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .poll-question {
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      font-style: italic;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .poll-options-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .poll-option-row {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 0.625rem 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .poll-option-row-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .poll-opt-code {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--r-sm);
+      background: rgba(240, 237, 232, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-title);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      flex-shrink: 0;
+    }
+
+    .poll-opt-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-hi);
+    }
+
+    .poll-opt-pct {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-hi);
+    }
+
+    .poll-opt-count {
+      font-size: 0.72rem;
+      color: var(--text-lo);
+    }
+
+    .poll-card-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .poll-meta-text {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+    }
+
+    .poll-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 0 0.875rem;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-box panel-elevated">
+      <div style="padding: 1.75rem;">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <svg width="22" height="22" fill="none" stroke="#C03040" stroke-width="1.75" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h2 class="title-scene" style="font-size: 1.1rem; color: var(--text-hi);">Akses Sutradara</h2>
+          <p style="font-size: 0.8rem; color: var(--text-lo); margin-top: 0.375rem;">Halaman ini dibatasi. Masukkan kata sandi untuk melanjutkan.</p>
+        </div>
+
+        <form id="adminLoginForm">
+          <div style="margin-bottom: 1rem;">
+            <label class="label-mono" for="adminPasswordInput" style="display: block; margin-bottom: 0.5rem;">Kata Sandi</label>
+            <input type="password" id="adminPasswordInput" class="input" placeholder="Masukkan kata sandi..." required>
+            <p style="font-size: 0.68rem; color: var(--text-lo); margin-top: 0.375rem;">Kata sandi: <span style="color: var(--text-mid); font-weight: 600;">mafia2026</span></p>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Masuk</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" style="width: 220px; background: var(--surface); border-right: 1px solid var(--border);">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <h1>The Weakling</h1>
+        <span>Konsol Sutradara</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#sessionsArea" class="sidebar-link active">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          Sesi Voting
+        </a>
+        <a href="results.html" target="_blank" class="sidebar-link">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Layar Proyektor
+        </a>
+        <a href="vote.html" target="_blank" class="sidebar-link">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          Halaman Penonton
+        </a>
+      </nav>
+
+      <div class="sidebar-status-box" style="margin-top: 1.25rem;">
+        <span class="status-label">Sesi Aktif</span>
+        <span class="status-value" id="sidebarStatus">Tidak ada</span>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button id="btnReset" class="btn btn-ghost btn-sm" style="width: 100%; justify-content: flex-start; gap: 0.5rem;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset Pertunjukan
+      </button>
+      <button id="btnLogout" class="btn btn-ghost btn-sm" style="width: 100%; justify-content: flex-start; gap: 0.5rem;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Keluar
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="main-header">
+      <div>
+        <h2>Kendali Sutradara</h2>
+        <p id="showTitleEl">The Weakling: Drama Live</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="results.html" target="_blank" class="btn btn-ghost btn-sm">Layar Hasil</a>
+        <!-- Logout tombol untuk mobile (sidebar tidak tampil) -->
+        <button id="btnMobileLogout" class="btn btn-ghost btn-sm" style="display: none;">Keluar</button>
+      </div>
+    </header>
+
+    <div class="main-body">
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Suara</span>
+          <span class="stat-value" id="statTotal">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Sesi Aktif</span>
+          <span class="stat-value" id="statActive" style="font-size: 1rem; margin-top: 0.625rem; line-height: 1.3;">Tidak ada</span>
+        </div>
+        <div class="stat-card" style="justify-content: center;">
+          <span class="stat-label">Pertunjukan Baru</span>
+          <button id="btnResetMain" class="btn btn-danger btn-sm" style="margin-top: 0.625rem;">Reset Semua Suara</button>
+        </div>
+      </div>
+
+      <!-- SESI VOTING -->
+      <div id="sessionsArea">
+        <div class="section-header">
+          <span class="section-title">Sesi Keputusan Alur Drama</span>
+          <span class="label-mono">1 sesi aktif serentak</span>
+        </div>
+
+        <div id="pollsContainer" style="display: flex; flex-direction: column; gap: 0.875rem;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/mafia-engine.js"></script>
+  <script>
+    const loginModal = document.getElementById('loginModal');
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    const adminPasswordInput = document.getElementById('adminPasswordInput');
+    const btnLogout = document.getElementById('btnLogout');
+    const btnMobileLogout = document.getElementById('btnMobileLogout');
+    const showTitleEl = document.getElementById('showTitleEl');
+    const sidebarStatus = document.getElementById('sidebarStatus');
+    const statTotal = document.getElementById('statTotal');
+    const statActive = document.getElementById('statActive');
+    const pollsContainer = document.getElementById('pollsContainer');
+    const btnReset = document.getElementById('btnReset');
+    const btnResetMain = document.getElementById('btnResetMain');
+
+    // Deteksi mobile - tampilkan tombol logout di header
+    if (window.innerWidth < 768) {
+      btnMobileLogout.style.display = '';
+    }
+
+    function checkAuth() {
+      if (sessionStorage.getItem('MAFIA_ADMIN_AUTH') === 'true') {
+        loginModal.style.display = 'none';
+      } else {
+        loginModal.style.display = 'flex';
+      }
+    }
+
+    adminLoginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (adminPasswordInput.value.trim() === 'mafia2026') {
+        sessionStorage.setItem('MAFIA_ADMIN_AUTH', 'true');
+        loginModal.style.display = 'none';
+        renderDashboard(window.mafiaEngine.state);
+      } else {
+        alert('Kata sandi salah.');
+      }
+    });
+
+    function doLogout() {
+      sessionStorage.removeItem('MAFIA_ADMIN_AUTH');
+      checkAuth();
+    }
+    btnLogout.addEventListener('click', doLogout);
+    btnMobileLogout.addEventListener('click', doLogout);
+
+    function doReset() {
+      if (confirm('Reset semua suara untuk pertunjukan berikutnya?')) {
+        const title = prompt('Judul pertunjukan baru (kosongkan untuk default):', '');
+        window.mafiaEngine.resetShow(title || undefined);
+      }
+    }
+    btnReset.addEventListener('click', doReset);
+    btnResetMain.addEventListener('click', doReset);
+
+    checkAuth();
+
+    function renderDashboard(state) {
+      showTitleEl.textContent = state.show.title;
+
+      let grandTotal = 0;
+      let activeLabel = 'Tidak ada';
+
+      pollsContainer.innerHTML = '';
+
+      state.polls.forEach(poll => {
+        const calc = window.mafiaEngine.getPollResults(poll.id);
+        grandTotal += calc.totalVotes;
+        if (poll.status === 'open') activeLabel = `Scene ${poll.scene}`;
+
+        let badgeHtml = '';
+        if (poll.status === 'open') {
+          badgeHtml = `<span class="badge badge-live"><span class="dot-live"></span> VOTING AKTIF</span>`;
+        } else if (poll.status === 'closed') {
+          badgeHtml = `<span class="badge badge-closed">SELESAI</span>`;
+        } else {
+          badgeHtml = `<span class="badge badge-draft">DRAFT</span>`;
+        }
+
+        let optRows = '';
+        calc.options.forEach(opt => {
+          optRows += `
+            <div class="poll-option-row">
+              <div class="poll-option-row-left">
+                <div class="poll-opt-code">${opt.code}</div>
+                <div>
+                  <div class="poll-opt-name">${opt.label}</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div class="poll-opt-pct">${opt.percentage}%</div>
+                <div class="poll-opt-count">${opt.count} suara</div>
+              </div>
+            </div>
+          `;
+        });
+
+        let actionHtml = '';
+        if (poll.status !== 'open') {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'open')" class="btn btn-primary btn-sm">
+              Buka Voting
+            </button>
+          `;
+        } else {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'closed')" class="btn btn-danger btn-sm">
+              Tutup Voting
+            </button>
+          `;
+        }
+        if (poll.status === 'closed') {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'draft')" class="btn btn-ghost btn-sm">
+              Ke Draft
+            </button>
+          `;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'poll-card' + (poll.status === 'open' ? ' poll-active' : '');
+        card.innerHTML = `
+          <div class="poll-card-header">
+            <div>
+              <div class="poll-scene-label">Scene ${poll.scene}</div>
+              <div class="poll-title-label">${poll.title}</div>
+            </div>
+            ${badgeHtml}
+          </div>
+          <div class="poll-card-body">
+            <p class="poll-question">"${poll.question}"</p>
+            <div class="poll-options-breakdown">${optRows}</div>
+          </div>
+          <div class="poll-card-footer">
+            <span class="poll-meta-text">
+              Total: <strong style="color: var(--text-hi);">${calc.totalVotes} suara</strong>
+              ${calc.winner && poll.status === 'closed' ? ` &bull; Terpilih: <span style="color: var(--text-mid);">[${calc.winner.code}] ${calc.winner.label}</span>` : ''}
+            </span>
+            <div class="poll-actions">${actionHtml}</div>
+          </div>
+        `;
+        pollsContainer.appendChild(card);
+      });
+
+      statTotal.textContent = grandTotal;
+      statActive.textContent = activeLabel;
+      sidebarStatus.textContent = activeLabel;
+    }
+
+    window.changePollStatus = function(pollId, status) {
+      window.mafiaEngine.setPollStatus(pollId, status);
+    };
+
+    window.mafiaEngine.subscribe((state) => {
+      renderDashboard(state);
+    });
+  </script>
+</body>
+</html>

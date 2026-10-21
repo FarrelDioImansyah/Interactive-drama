@@ -1,0 +1,413 @@
+/* ==============================================================================
+   DARK CINEMATIC DESIGN SYSTEM
+   "The Weakling" - Identitas Radit yang Tersembunyi
+   
+   Arah: Thriller dan misteri. Hitam pekat, merah marun, putih tinggi kontras.
+   Dioptimalkan untuk layar proyektor panggung dan mobile penonton.
+
+   PALET (3 warna inti + 1 aksen):
+   - Hitam sinema: #0B0B0D  (latar, bukan pure black yang harsh)
+   - Surface panel: #141417  (kartu dan panel, cukup berbeda dari latar)
+   - Marun darah:   #8B0000 / #A01020  (elemen aktif, tombol, status)
+   - Putih teater:  #F0EDE8  (teks utama, kontras tinggi proyektor)
+   - Abu pendukung: #8A8A90  (teks sekunder, label)
+   
+   Tipografi:
+   - Judul: Cinzel (serif dramatis teater, bukan sans AI default)
+   - Body UI: Inter (bersih dan dapat dibaca di proyektor)
+   
+   Radius: 4-6px (tegas, bukan pill-shape)
+   Shadow: elevation marker, bukan dekorasi
+   Glow: hanya 1 elemen (highlight pemenang di results.html)
+============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Latar */
+  --bg: #0B0B0D;
+  --surface: #141417;
+  --surface-raised: #1C1C21;
+
+  /* Marun - tombol, status aktif, bar hasil */
+  --maroon: #8B0000;
+  --maroon-bright: #A01020;
+  --maroon-dim: rgba(139, 0, 0, 0.18);
+
+  /* Teks */
+  --text-hi: #F0EDE8;       /* Teks utama, proyektor */
+  --text-mid: #B8B4AF;      /* Label dan subheading */
+  --text-lo: #8A8A90;       /* Teks tersier, placeholder */
+
+  /* Border */
+  --border: rgba(240, 237, 232, 0.1);   /* Tipis, tidak mendominasi */
+  --border-active: rgba(139, 0, 0, 0.6);
+
+  /* Tipografi */
+  --font-title: 'Cinzel', 'Georgia', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  /* Radius tegas, bukan pill */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text-hi);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* -------------------------------------------------------
+   TIPOGRAFI TEATER
+   Cinzel hanya untuk judul karena relevan dengan identitas
+   pertunjukan drama. Bukan trend AI monospace.
+------------------------------------------------------- */
+
+.title-stage {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+
+.title-scene {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.label-mono {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+
+/* -------------------------------------------------------
+   PANEL DAN KARTU
+   Satu layer elevation, tidak semua mengambang (R-12)
+------------------------------------------------------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+.panel-elevated {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  /* Elevasi nyata, bukan dekorasi. Dipakai untuk modal dan focus area */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* -------------------------------------------------------
+   TOMBOL
+   Kontras tinggi. btn-primary = merah marun.
+   btn-ghost = outline bersih, tidak ada fill.
+------------------------------------------------------- */
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  min-height: 44px; /* Tap target minimum (R-03) */
+  padding: 0 1.25rem;
+}
+
+.btn:focus-visible {
+  /* Focus indicator wajib (R-32), menggantikan outline default */
+  outline: 2px solid var(--text-hi);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--maroon-bright);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #B81025;
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: transparent;
+  color: #e87a85;
+  border: 1px solid rgba(168, 0, 30, 0.5);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(139, 0, 0, 0.18);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text-hi);
+  border-color: rgba(240, 237, 232, 0.25);
+  background: rgba(240, 237, 232, 0.04);
+}
+
+/* -------------------------------------------------------
+   STATUS BADGE
+   Maksimal 2 varian: aktif (marun) dan tidak aktif (abu).
+   Tidak ada glow berlebihan (R-13).
+------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.badge-live {
+  background: var(--maroon-dim);
+  border: 1px solid var(--border-active);
+  color: #E07080;
+}
+
+.badge-closed {
+  background: rgba(138, 138, 144, 0.1);
+  border: 1px solid rgba(138, 138, 144, 0.25);
+  color: var(--text-lo);
+}
+
+.badge-draft {
+  background: rgba(240, 237, 232, 0.05);
+  border: 1px solid rgba(240, 237, 232, 0.15);
+  color: var(--text-mid);
+}
+
+/* Indikator titik untuk status live */
+.dot-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--maroon-bright);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* -------------------------------------------------------
+   FORM INPUT
+   Kontras cukup, focus state jelas (R-25, R-32)
+------------------------------------------------------- */
+
+.input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  transition: border-color 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--text-lo);
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(240, 237, 232, 0.4);
+}
+
+/* -------------------------------------------------------
+   PROGRESS BAR HASIL VOTING
+   Bar merah marun, kontras tinggi di proyektor.
+   Transisi smooth saat suara masuk.
+------------------------------------------------------- */
+
+.bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(240, 237, 232, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--maroon-bright);
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Satu-satunya elemen dengan glow: highlight pemenang (R-13) */
+.bar-fill-winner {
+  background: var(--maroon-bright);
+  box-shadow: 0 0 14px rgba(160, 16, 32, 0.7);
+}
+
+/* -------------------------------------------------------
+   KARTU OPSI VOTING (AUDIENCE)
+   Tombol besar, tap-friendly, state selected jelas (R-03)
+------------------------------------------------------- */
+
+.option-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.125rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  min-height: 64px; /* Tap target yang nyaman di HP */
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.option-card:hover {
+  border-color: rgba(240, 237, 232, 0.2);
+  background: var(--surface-raised);
+}
+
+.option-card:focus-visible {
+  outline: 2px solid var(--text-hi);
+  outline-offset: 2px;
+}
+
+.option-card.selected {
+  border-color: var(--maroon-bright);
+  background: rgba(139, 0, 0, 0.12);
+}
+
+.option-code {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: rgba(240, 237, 232, 0.06);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  flex-shrink: 0;
+}
+
+.option-card.selected .option-code {
+  background: var(--maroon-bright);
+  border-color: var(--maroon-bright);
+  color: #fff;
+}
+
+/* -------------------------------------------------------
+   DIVIDER
+------------------------------------------------------- */
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* -------------------------------------------------------
+   LAYAR PROYEKTOR
+   Pertanyaan besar, teks putih penuh, kontras maksimal.
+   Tidak ada dekorasi yang mengalihkan perhatian.
+------------------------------------------------------- */
+
+.projector-question {
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-hi);
+  letter-spacing: 0.02em;
+}
+
+/* -------------------------------------------------------
+   SIDEBAR ADMIN (Desktop)
+------------------------------------------------------- */
+
+.sidebar {
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-lo);
+  text-decoration: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  color: var(--text-hi);
+  background: rgba(240, 237, 232, 0.05);
+}
+
+.sidebar-link.active {
+  color: var(--text-hi);
+  background: rgba(240, 237, 232, 0.07);
+}
+
+.sidebar-link:focus-visible {
+  outline: 2px solid var(--text-hi);
+  outline-offset: 1px;
+}
