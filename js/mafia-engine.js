@@ -1,8 +1,7 @@
 // ==============================================================================
-// MAFIA SYNDICATE VOTING ENGINE (SUPABASE + FALLBACK MOCK DATA ENGINE)
+// MAFIA SYNDICATE VOTING ENGINE (SUPABASE REALTIME + LOCALSTORAGE FALLBACK)
 // ==============================================================================
 
-// Baca kredensial dari js/config.js (browser-readable) atau fallback ke localStorage
 const _cfg = window.APP_CONFIG || {};
 const SUPABASE_CONFIG = {
   url: _cfg.SUPABASE_URL || localStorage.getItem('MAFIA_SUPABASE_URL') || '',
@@ -12,14 +11,20 @@ const SUPABASE_CONFIG = {
 let supabaseClient = null;
 if (window.supabase && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
   try {
-    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    });
     console.log("Connected to Supabase Syndicate Database.");
   } catch (err) {
     console.error("Supabase connection error:", err);
   }
 }
 
-// Default Seed Data untuk offline / instant showcase & prototype
+// Default Seed Data untuk offline fallback / initial placeholder
 const DEFAULT_STATE = {
   show: {
     id: 'show-mafia-01',
@@ -31,7 +36,7 @@ const DEFAULT_STATE = {
       scene: 2,
       title: 'SCENE 2 — UNDERBOSS DILEMMA',
       question: 'Jika kalian berada di posisi Radit saat berhadapan dengan tekanan sindikat, apa yang akan kalian lakukan?',
-      status: 'closed', // draft, open, closed
+      status: 'closed',
       options: [
         {
           id: 'opt-2-a',
@@ -103,19 +108,19 @@ const DEFAULT_STATE = {
       ]
     }
   ],
-  // Records: { [pollId]: { [voterToken]: optionId } }
   votes: {}
 };
 
-// Local Storage Helper
 const STORAGE_KEY = 'MAFIA_VOTE_LOCAL_STATE';
 
 class MafiaEngine {
   constructor() {
     this.listeners = [];
+    this.supabase = supabaseClient;
+    this.broadcastChannel = null;
     this.state = this.loadState();
 
-    // Dengarkan perubahan antar tab / window secara otomatis (Sync Real-time di browser)
+    // Dengarkan perubahan antar tab browser lokal
     window.addEventListener('storage', (e) => {
       if (e.key === STORAGE_KEY) {
         this.state = this.loadState();
@@ -123,9 +128,10 @@ class MafiaEngine {
       }
     });
 
-    // Supabase realtime channel jika client ada
-    if (supabaseClient) {
+    // Inisialisasi Supabase sync dan realtime
+    if (this.supabase) {
       this.initSupabaseRealtime();
+      this.fetchFromSupabase();
     }
   }
 
@@ -144,7 +150,9 @@ class MafiaEngine {
 
   saveState(state) {
     this.state = state;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {}
     this.notify();
   }
 
@@ -157,10 +165,15 @@ class MafiaEngine {
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.state));
+    this.listeners.forEach(cb => {
+      try {
+        cb(this.state);
+      } catch (err) {
+        console.error("Subscriber notification error:", err);
+      }
+    });
   }
 
-  // Generate / ambil UUID anonim penonton
   getVoterToken() {
     let token = localStorage.getItem('MAFIA_VOTER_TOKEN');
     if (!token) {
@@ -170,7 +183,6 @@ class MafiaEngine {
     return token;
   }
 
-  // Cek apakah penonton sudah vote di poll tertentu
   hasVoted(pollId) {
     const token = this.getVoterToken();
     return !!(this.state.votes[pollId] && this.state.votes[pollId][token]);
@@ -184,39 +196,159 @@ class MafiaEngine {
     return null;
   }
 
-  // Kirim suara (FR-04, FR-05, FR-08)
+  // Tarik data lengkap langsung dari Supabase
+  async fetchFromSupabase() {
+    if (!this.supabase) return;
+
+    try {
+      const [showsRes, pollsRes, optionsRes, votesRes] = await Promise.all([
+        this.supabase.from('shows').select('*').limit(1),
+        this.supabase.from('polls').select('*').order('scene', { ascending: true }),
+        this.supabase.from('poll_options').select('*').order('sort_order', { ascending: true }),
+        this.supabase.from('votes').select('*')
+      ]);
+
+      if (pollsRes.error || optionsRes.error) {
+        console.warn("Supabase fetch warning:", pollsRes.error || optionsRes.error);
+        return;
+      }
+
+      const pollsData = pollsRes.data || [];
+      const optionsData = optionsRes.data || [];
+      const votesData = votesRes.data || [];
+      const showsData = showsRes.data || [];
+
+      if (pollsData.length === 0) return;
+
+      const votesMap = {};
+      votesData.forEach(v => {
+        if (!votesMap[v.poll_id]) votesMap[v.poll_id] = {};
+        votesMap[v.poll_id][v.voter_token] = v.option_id;
+      });
+
+      const assembledPolls = pollsData.map(p => {
+        const opts = optionsData
+          .filter(o => o.poll_id === p.id)
+          .map(o => {
+            const count = votesData.filter(v => v.poll_id === p.id && v.option_id === o.id).length;
+            return {
+              id: o.id,
+              code: o.code,
+              label: o.label,
+              desc: o.description || '',
+              votesCount: count
+            };
+          });
+
+        return {
+          id: p.id,
+          scene: p.scene,
+          title: p.title,
+          question: p.question,
+          status: p.status, // draft, open, closed
+          options: opts
+        };
+      });
+
+      this.state = {
+        show: showsData[0] ? { id: showsData[0].id, title: showsData[0].title } : this.state.show,
+        polls: assembledPolls,
+        votes: votesMap
+      };
+
+      this.saveState(this.state);
+    } catch (err) {
+      console.error("Failed to sync from Supabase:", err);
+    }
+  }
+
+  // Setup Realtime Channel
+  initSupabaseRealtime() {
+    if (!this.supabase) return;
+
+    // 1. Channel Postgres DB Changes
+    this.supabase
+      .channel('public_db_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, async () => {
+        console.log("Realtime: Polls table updated");
+        await this.fetchFromSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, async () => {
+        console.log("Realtime: Votes table updated");
+        await this.fetchFromSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shows' }, async () => {
+        await this.fetchFromSupabase();
+      })
+      .subscribe((status) => {
+        console.log("Supabase DB realtime status:", status);
+      });
+
+    // 2. Channel Broadcast instan (<50ms serentak antar semua HP)
+    this.broadcastChannel = this.supabase.channel('mafia_broadcast_room');
+    this.broadcastChannel
+      .on('broadcast', { event: 'poll_update' }, async (payload) => {
+        console.log("Realtime Broadcast received:", payload);
+        await this.fetchFromSupabase();
+      })
+      .subscribe((status) => {
+        console.log("Supabase Broadcast realtime status:", status);
+      });
+  }
+
+  // Kirim suara penonton (FR-04, FR-05, FR-08)
   submitVote(pollId, optionId) {
     const poll = this.state.polls.find(p => p.id === pollId);
     if (!poll) return { success: false, message: 'Sesi tidak ditemukan' };
     if (poll.status !== 'open') return { success: false, message: 'Voting sedang tidak dibuka!' };
 
     const token = this.getVoterToken();
-    if (!this.state.votes[pollId]) {
-      this.state.votes[pollId] = {};
-    }
-
-    if (this.state.votes[pollId][token]) {
+    if (this.hasVoted(pollId)) {
       return { success: false, message: 'Anda sudah menggunakan hak suara pada adegan ini!' };
     }
 
-    // Rekam suara
+    // Catat secara lokal terlebih dahulu untuk feedback UI cepat
+    if (!this.state.votes[pollId]) {
+      this.state.votes[pollId] = {};
+    }
     this.state.votes[pollId][token] = optionId;
-    
-    // Update count pada option
+
     const option = poll.options.find(o => o.id === optionId);
     if (option) {
       option.votesCount = (option.votesCount || 0) + 1;
     }
-
     this.saveState(this.state);
+
+    // Kirim asinkron ke Supabase jika client aktif
+    if (this.supabase) {
+      this.supabase
+        .from('votes')
+        .insert([{
+          poll_id: pollId,
+          option_id: optionId,
+          voter_token: token
+        }])
+        .then(({ error }) => {
+          if (error) console.error("Error inserting vote:", error);
+          if (this.broadcastChannel) {
+            this.broadcastChannel.send({
+              type: 'broadcast',
+              event: 'poll_update',
+              payload: { type: 'vote', pollId }
+            });
+          }
+        })
+        .catch(err => console.error("Vote network error:", err));
+    }
+
     return { success: true, message: 'Keputusan Mafia berhasil dicatat!' };
   }
 
-  // ADMIN CONTROLS (FR-01, FR-02, FR-03, FR-10)
-  setPollStatus(pollId, newStatus) {
+  // Kontrol Admin: Ubah status voting sesi (open / closed / draft)
+  async setPollStatus(pollId, newStatus) {
+    // 1. Optimistic update lokal
     const poll = this.state.polls.find(p => p.id === pollId);
     if (poll) {
-      // Jika membuka sesi ini, tutup sesi lain agar hanya 1 yang aktif serentak (Aturan 1)
       if (newStatus === 'open') {
         this.state.polls.forEach(p => {
           if (p.id !== pollId && p.status === 'open') {
@@ -227,23 +359,87 @@ class MafiaEngine {
       poll.status = newStatus;
       this.saveState(this.state);
     }
+
+    // 2. Kirim update ke database Supabase
+    if (this.supabase) {
+      try {
+        if (newStatus === 'open') {
+          // Tutup poll lain di database agar hanya 1 sesi yang aktif serentak
+          await this.supabase
+            .from('polls')
+            .update({ status: 'closed', closed_at: new Date().toISOString() })
+            .neq('id', pollId)
+            .eq('status', 'open');
+        }
+
+        const updatePayload = { status: newStatus };
+        if (newStatus === 'open') updatePayload.opened_at = new Date().toISOString();
+        if (newStatus === 'closed') updatePayload.closed_at = new Date().toISOString();
+
+        const { error } = await this.supabase
+          .from('polls')
+          .update(updatePayload)
+          .eq('id', pollId);
+
+        if (error) {
+          console.error("Supabase setPollStatus error:", error);
+        }
+
+        // 3. Broadcast sinyal serentak ke seluruh HP penonton
+        if (this.broadcastChannel) {
+          this.broadcastChannel.send({
+            type: 'broadcast',
+            event: 'poll_update',
+            payload: { pollId, newStatus }
+          });
+        }
+      } catch (err) {
+        console.error("Error executing setPollStatus:", err);
+      }
+    }
   }
 
   // Reset Sesi Drama untuk Pertunjukan Baru
-  resetShow(newTitle) {
-    const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
-    if (newTitle) {
-      fresh.show.title = newTitle;
+  async resetShow(newTitle) {
+    if (this.supabase) {
+      try {
+        // Hapus seluruh vote di Supabase
+        await this.supabase.from('votes').delete().neq('voter_token', '__never__');
+
+        // Set semua sesi kembali ke draft
+        await this.supabase.from('polls').update({
+          status: 'draft',
+          opened_at: null,
+          closed_at: null
+        }).neq('title', '__never__');
+
+        if (newTitle) {
+          await this.supabase.from('shows').update({ title: newTitle }).neq('title', '__never__');
+        }
+
+        await this.fetchFromSupabase();
+
+        if (this.broadcastChannel) {
+          this.broadcastChannel.send({
+            type: 'broadcast',
+            event: 'poll_update',
+            payload: { action: 'reset' }
+          });
+        }
+      } catch (err) {
+        console.error("Reset error:", err);
+      }
+    } else {
+      const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      if (newTitle) fresh.show.title = newTitle;
+      this.saveState(fresh);
     }
-    this.saveState(fresh);
   }
 
-  // Ambil sesi aktif saat ini
   getActivePoll() {
     return this.state.polls.find(p => p.status === 'open') || null;
   }
 
-  // Perhitungan Hasil Agregasi
   getPollResults(pollId) {
     const poll = this.state.polls.find(p => p.id === pollId);
     if (!poll) return null;
@@ -263,7 +459,6 @@ class MafiaEngine {
       };
     });
 
-    // Cari pemenang jika ditutup
     let maxVotes = -1;
     let winner = null;
     let isTie = false;
@@ -287,17 +482,6 @@ class MafiaEngine {
       winner: isTie ? null : winner,
       isTie
     };
-  }
-
-  // Supabase Realtime Handler (jika connect)
-  initSupabaseRealtime() {
-    // Sinkronisasi data awal dari Supabase jika ada
-    supabaseClient
-      .channel('public:polls')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, payload => {
-        console.log("Realtime poll update:", payload);
-      })
-      .subscribe();
   }
 }
 
