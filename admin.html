@@ -1,374 +1,628 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Godfather Desk — Admin Control Panel</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Mafia Noir Theme -->
+  <title>The Weakling - Admin</title>
   <link rel="stylesheet" href="css/mafia-theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* LOGIN MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 11, 13, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 50;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--r-md);
+      background: rgba(139, 0, 0, 0.12);
+      border: 1px solid rgba(139, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.25rem 0;
+    }
+
+    @media (min-width: 768px) {
+      .sidebar { display: flex; }
+    }
+
+    .sidebar-top {
+      padding: 0 1rem;
+    }
+
+    .sidebar-brand {
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand h1 {
+      font-family: var(--font-title);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .sidebar-brand span {
+      font-size: 0.65rem;
+      color: var(--text-lo);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .sidebar-status-box {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+
+    .sidebar-status-box .status-label {
+      font-size: 0.65rem;
+      color: var(--text-lo);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      display: block;
+    }
+
+    .sidebar-status-box .status-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-hi);
+      margin-top: 0.25rem;
+      display: block;
+    }
+
+    .sidebar-bottom {
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .main-header h2 {
+      font-family: var(--font-title);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .main-header p {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+      margin-top: 2px;
+    }
+
+    .main-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.875rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1rem 1.125rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+
+    .stat-value {
+      font-family: var(--font-title);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-hi);
+      margin-top: 0.5rem;
+      line-height: 1;
+    }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.875rem;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+
+    /* POLL CARDS */
+    .poll-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+
+    .poll-card.poll-active {
+      border-color: var(--maroon-bright);
+    }
+
+    .poll-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .poll-scene-label {
+      font-family: var(--font-title);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-hi);
+    }
+
+    .poll-title-label {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+    }
+
+    .poll-card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .poll-question {
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      font-style: italic;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .poll-options-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .poll-option-row {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 0.625rem 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .poll-option-row-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .poll-opt-code {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--r-sm);
+      background: rgba(240, 237, 232, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-title);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      flex-shrink: 0;
+    }
+
+    .poll-opt-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-hi);
+    }
+
+    .poll-opt-pct {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-hi);
+    }
+
+    .poll-opt-count {
+      font-size: 0.72rem;
+      color: var(--text-lo);
+    }
+
+    .poll-card-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .poll-meta-text {
+      font-size: 0.75rem;
+      color: var(--text-lo);
+    }
+
+    .poll-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 0 0.875rem;
+      font-size: 0.78rem;
+    }
+  </style>
 </head>
+<body>
 
-<body class="min-h-screen text-gray-200 p-4 sm:p-6 lg:p-8">
-
-  <!-- ADMIN LOGIN MODAL (FR-01) -->
-  <div id="loginModal" class="fixed inset-0 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 z-50">
-    <div class="mafia-glass max-w-md w-full p-6 sm:p-8 border-yellow-700/50 shadow-2xl relative">
-      <div class="text-center mb-6">
-        <div
-          class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-red-950/80 border border-red-600 flex items-center justify-center text-red-500 shadow-xl shadow-red-950/50">
-          <i data-lucide="shield-alert" class="w-8 h-8"></i>
-        </div>
-        <h2 class="text-2xl font-mafia font-black text-yellow-400">MEJA SUTRADARA</h2>
-        <p class="text-xs text-gray-400 font-mono mt-1">THE WEAKLING — AUTORISASI MAFIA</p>
-      </div>
-
-      <form id="adminLoginForm" class="space-y-4">
-        <div>
-          <label class="block text-xs font-mono uppercase text-gray-300 mb-1.5">Kata Sandi Don / Admin</label>
-          <div class="relative">
-            <input type="password" id="adminPasswordInput"
-              class="w-full px-4 py-3 rounded-xl bg-black/60 border border-yellow-800/50 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 font-mono text-sm"
-              placeholder="Masukkan password..." required>
-            <div class="text-[10px] text-gray-500 mt-1">Default Password Prototype: <span
-                class="text-yellow-500 font-mono font-bold"></span></div>
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-box panel-elevated">
+      <div style="padding: 1.75rem;">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <svg width="22" height="22" fill="none" stroke="#C03040" stroke-width="1.75" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
           </div>
+          <h2 class="title-scene" style="font-size: 1.1rem; color: var(--text-hi);">Akses Sutradara</h2>
+          <p style="font-size: 0.8rem; color: var(--text-lo); margin-top: 0.375rem;">Halaman ini dibatasi. Masukkan kata sandi untuk melanjutkan.</p>
         </div>
 
-        <button type="submit"
-          class="w-full py-3.5 rounded-xl btn-mafia-gold flex items-center justify-center gap-2 text-sm font-bold shadow-xl">
-          <i data-lucide="key" class="w-4 h-4"></i>
-          BUKA KONSOL SUTRADARA
-        </button>
-      </form>
+        <form id="adminLoginForm">
+          <div style="margin-bottom: 1rem;">
+            <label class="label-mono" for="adminPasswordInput" style="display: block; margin-bottom: 0.5rem;">Kata Sandi</label>
+            <input type="password" id="adminPasswordInput" class="input" placeholder="Masukkan kata sandi..." required>
+            <p style="font-size: 0.68rem; color: var(--text-lo); margin-top: 0.375rem;">Kata sandi: <span style="color: var(--text-mid); font-weight: 600;">mafia2026</span></p>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Masuk</button>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- ADMIN DASHBOARD CONTAINER (FR-02, FR-03, FR-10) -->
-  <div id="dashboardApp" class="max-w-6xl mx-auto space-y-6">
-
-    <!-- Top Navigation Bar -->
-    <header class="flex flex-wrap items-center justify-between gap-4 mafia-glass p-5">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-11 h-11 rounded-xl bg-red-950/80 border border-red-600/70 flex items-center justify-center text-red-500 shadow-lg">
-          <i data-lucide="skull" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-mafia font-bold text-yellow-400">GODFATHER DESK</h1>
-            <span
-              class="text-[10px] px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-400 font-mono">ADMIN
-              AUTHENTICATED</span>
-          </div>
-          <p class="text-xs text-gray-400 font-mono" id="currentShowTitle">THE WEAKLING: SYNDICATE JUDGMENT</p>
-        </div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" style="width: 220px; background: var(--surface); border-right: 1px solid var(--border);">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <h1>The Weakling</h1>
+        <span>Konsol Sutradara</span>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="results.html" target="_blank"
-          class="px-3.5 py-2 rounded-lg btn-mafia-outline text-xs flex items-center gap-1.5">
-          <i data-lucide="tv" class="w-4 h-4"></i> Buka Layar Proyektor
+      <nav class="sidebar-nav">
+        <a href="#sessionsArea" class="sidebar-link active">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          Sesi Voting
         </a>
-        <a href="vote.html" target="_blank"
-          class="px-3.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-gray-300 hover:text-white text-xs flex items-center gap-1.5 transition">
-          <i data-lucide="smartphone" class="w-4 h-4"></i> Simulasi Audience HP
+        <a href="results.html" target="_blank" class="sidebar-link">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Layar Proyektor
         </a>
-        <button id="btnLogout"
-          class="px-3 py-2 rounded-lg bg-red-950/60 border border-red-800 text-red-400 hover:bg-red-900/60 text-xs transition">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
-        </button>
+        <a href="vote.html" target="_blank" class="sidebar-link">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          Halaman Penonton
+        </a>
+      </nav>
+
+      <div class="sidebar-status-box" style="margin-top: 1.25rem;">
+        <span class="status-label">Sesi Aktif</span>
+        <span class="status-value" id="sidebarStatus">Tidak ada</span>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button id="btnReset" class="btn btn-ghost btn-sm" style="width: 100%; justify-content: flex-start; gap: 0.5rem;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset Pertunjukan
+      </button>
+      <button id="btnLogout" class="btn btn-ghost btn-sm" style="width: 100%; justify-content: flex-start; gap: 0.5rem;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Keluar
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <header class="main-header">
+      <div>
+        <h2>Kendali Sutradara</h2>
+        <p id="showTitleEl">The Weakling: Drama Live</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="results.html" target="_blank" class="btn btn-ghost btn-sm">Layar Hasil</a>
+        <!-- Logout tombol untuk mobile (sidebar tidak tampil) -->
+        <button id="btnMobileLogout" class="btn btn-ghost btn-sm" style="display: none;">Keluar</button>
       </div>
     </header>
 
-    <!-- Global Quick Status & Emergency Reset (FR-10) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="mafia-glass p-4 border-yellow-700/30 flex items-center justify-between">
-        <div>
-          <div class="text-[11px] font-mono text-gray-400 uppercase">Status Pertunjukan</div>
-          <div id="globalActiveSceneText" class="text-lg font-mafia font-bold text-yellow-400 mt-0.5">Scene 2 Aktif
-          </div>
+    <div class="main-body">
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Suara</span>
+          <span class="stat-value" id="statTotal">0</span>
         </div>
-        <div
-          class="w-10 h-10 rounded-lg bg-yellow-950/60 border border-yellow-700/50 flex items-center justify-center text-yellow-400">
-          <i data-lucide="clapperboard" class="w-5 h-5"></i>
+        <div class="stat-card">
+          <span class="stat-label">Sesi Aktif</span>
+          <span class="stat-value" id="statActive" style="font-size: 1rem; margin-top: 0.625rem; line-height: 1.3;">Tidak ada</span>
         </div>
-      </div>
-
-      <div class="mafia-glass p-4 border-yellow-700/30 flex items-center justify-between">
-        <div>
-          <div class="text-[11px] font-mono text-gray-400 uppercase">Total Suara Masuk (Seluruh Sesi)</div>
-          <div id="globalTotalVotesText" class="text-lg font-mafia font-bold text-white mt-0.5">0 Suara</div>
-        </div>
-        <div
-          class="w-10 h-10 rounded-lg bg-emerald-950/60 border border-emerald-700/50 flex items-center justify-center text-emerald-400">
-          <i data-lucide="users" class="w-5 h-5"></i>
+        <div class="stat-card" style="justify-content: center;">
+          <span class="stat-label">Pertunjukan Baru</span>
+          <button id="btnResetMain" class="btn btn-danger btn-sm" style="margin-top: 0.625rem;">Reset Semua Suara</button>
         </div>
       </div>
 
-      <div class="mafia-glass p-4 border-red-800/40 flex items-center justify-between">
-        <div>
-          <div class="text-[11px] font-mono text-gray-400 uppercase">Manajemen Pertunjukan Baru</div>
-          <button id="btnResetShow"
-            class="mt-1 text-xs text-red-400 hover:text-red-300 font-bold underline flex items-center gap-1">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reset untuk Pertunjukan Berikutnya
-          </button>
+      <!-- SESI VOTING -->
+      <div id="sessionsArea">
+        <div class="section-header">
+          <span class="section-title">Sesi Keputusan Alur Drama</span>
+          <span class="label-mono">1 sesi aktif serentak</span>
         </div>
-        <div
-          class="w-10 h-10 rounded-lg bg-red-950/60 border border-red-700/50 flex items-center justify-center text-red-400">
-          <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-        </div>
+
+        <div id="pollsContainer" style="display: flex; flex-direction: column; gap: 0.875rem;"></div>
       </div>
     </div>
+  </main>
 
-    <!-- Sesi Titik Keputusan Cerita (Scene 2, Scene 3, Scene 4) -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-mafia font-bold text-yellow-400 flex items-center gap-2">
-          <i data-lucide="sliders" class="w-5 h-5"></i> KONTROL TIGA TITIK KEPUTUSAN (SCENE 2, 3, & 4)
-        </h2>
-        <span class="text-xs text-gray-400 font-mono">1 SESI AKTIF SECARA BERSAMAAN</span>
-      </div>
-
-      <!-- Poll Cards Grid -->
-      <div id="pollsManagerContainer" class="grid grid-cols-1 gap-5">
-        <!-- Rendered via JS -->
-      </div>
-    </div>
-
-    <!-- Integrasi Database Supabase Opsional -->
-    <div class="mafia-glass p-5 border-yellow-800/40">
-      <div class="flex items-center justify-between cursor-pointer" id="toggleSupabaseSettings">
-        <div class="flex items-center gap-2 text-sm font-mafia font-bold text-yellow-400">
-          <i data-lucide="database" class="w-4 h-4"></i> KONFIGURASI SUPABASE REALTIME (OPSIONAL)
-        </div>
-        <i data-lucide="chevron-down" id="supabaseChevron" class="w-4 h-4 text-gray-400 transition-transform"></i>
-      </div>
-
-      <div id="supabaseFormArea" class="mt-4 pt-4 border-t border-yellow-900/30 hidden space-y-3">
-        <p class="text-xs text-gray-400">
-          Sistem saat ini sudah berjalan 100% sinkron antar tab / browser window secara real-time via LocalStorage
-          Engine. Jika ingin menghubungkan ke database cloud Supabase, masukkan kredensial proyek Supabase Anda:
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-mono text-gray-400 mb-1">SUPABASE URL</label>
-            <input type="text" id="supabaseUrlInput" placeholder="https://xyz.supabase.co"
-              class="w-full px-3 py-2 bg-black/60 border border-yellow-800/50 rounded-lg text-xs font-mono text-white">
-          </div>
-          <div>
-            <label class="block text-[11px] font-mono text-gray-400 mb-1">SUPABASE ANON KEY</label>
-            <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOi..."
-              class="w-full px-3 py-2 bg-black/60 border border-yellow-800/50 rounded-lg text-xs font-mono text-white">
-          </div>
-        </div>
-        <div class="flex items-center justify-between">
-          <button id="btnSaveSupabaseConfig" class="px-4 py-2 rounded-lg btn-mafia-gold text-xs font-bold">
-            Simpan Kredensial & Hubungkan
-          </button>
-          <span class="text-[11px] text-gray-500">Skrip tabel tersedia di <span
-              class="text-yellow-500 font-mono">supabase_schema.sql</span></span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Scripts -->
   <script src="/api/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/mafia-engine.js"></script>
   <script>
-    lucide.createIcons();
-
-    // Elements
     const loginModal = document.getElementById('loginModal');
     const adminLoginForm = document.getElementById('adminLoginForm');
     const adminPasswordInput = document.getElementById('adminPasswordInput');
     const btnLogout = document.getElementById('btnLogout');
-    const pollsManagerContainer = document.getElementById('pollsManagerContainer');
-    const currentShowTitle = document.getElementById('currentShowTitle');
-    const globalActiveSceneText = document.getElementById('globalActiveSceneText');
-    const globalTotalVotesText = document.getElementById('globalTotalVotesText');
-    const btnResetShow = document.getElementById('btnResetShow');
+    const btnMobileLogout = document.getElementById('btnMobileLogout');
+    const showTitleEl = document.getElementById('showTitleEl');
+    const sidebarStatus = document.getElementById('sidebarStatus');
+    const statTotal = document.getElementById('statTotal');
+    const statActive = document.getElementById('statActive');
+    const pollsContainer = document.getElementById('pollsContainer');
+    const btnReset = document.getElementById('btnReset');
+    const btnResetMain = document.getElementById('btnResetMain');
 
-    // Supabase collapsible config
-    const toggleSupabaseSettings = document.getElementById('toggleSupabaseSettings');
-    const supabaseFormArea = document.getElementById('supabaseFormArea');
-    const supabaseChevron = document.getElementById('supabaseChevron');
-    const supabaseUrlInput = document.getElementById('supabaseUrlInput');
-    const supabaseKeyInput = document.getElementById('supabaseKeyInput');
-    const btnSaveSupabaseConfig = document.getElementById('btnSaveSupabaseConfig');
+    // Deteksi mobile - tampilkan tombol logout di header
+    if (window.innerWidth < 768) {
+      btnMobileLogout.style.display = '';
+    }
 
-    // Cek Login Admin
-    function checkAdminAuth() {
-      const isAuth = sessionStorage.getItem('MAFIA_ADMIN_AUTH');
-      if (isAuth === 'true') {
-        loginModal.classList.add('hidden');
+    function checkAuth() {
+      if (sessionStorage.getItem('MAFIA_ADMIN_AUTH') === 'true') {
+        loginModal.style.display = 'none';
       } else {
-        loginModal.classList.remove('hidden');
+        loginModal.style.display = 'flex';
       }
     }
 
     adminLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const pwd = adminPasswordInput.value.trim();
-      if (pwd === 'mafia2026' || pwd === 'admin') {
+      if (adminPasswordInput.value.trim() === 'mafia2026') {
         sessionStorage.setItem('MAFIA_ADMIN_AUTH', 'true');
-        loginModal.classList.add('hidden');
+        loginModal.style.display = 'none';
         renderDashboard(window.mafiaEngine.state);
       } else {
-        alert('Kata sandi Mafia salah! Gunakan: mafia2026');
+        alert('Kata sandi salah.');
       }
     });
 
-    btnLogout.addEventListener('click', () => {
+    function doLogout() {
       sessionStorage.removeItem('MAFIA_ADMIN_AUTH');
-      checkAdminAuth();
-    });
+      checkAuth();
+    }
+    btnLogout.addEventListener('click', doLogout);
+    btnMobileLogout.addEventListener('click', doLogout);
 
-    checkAdminAuth();
-
-    // Toggle Supabase Form
-    toggleSupabaseSettings.addEventListener('click', () => {
-      supabaseFormArea.classList.toggle('hidden');
-      supabaseChevron.classList.toggle('rotate-180');
-    });
-
-    const _adminCfg = window.APP_CONFIG || {};
-    supabaseUrlInput.value = _adminCfg.SUPABASE_URL || localStorage.getItem('MAFIA_SUPABASE_URL') || '';
-    supabaseKeyInput.value = _adminCfg.SUPABASE_ANON_KEY || localStorage.getItem('MAFIA_SUPABASE_ANON') || '';
-
-    btnSaveSupabaseConfig.addEventListener('click', () => {
-      localStorage.setItem('MAFIA_SUPABASE_URL', supabaseUrlInput.value.trim());
-      localStorage.setItem('MAFIA_SUPABASE_ANON', supabaseKeyInput.value.trim());
-      alert('Kredensial disimpan! Muat ulang halaman untuk menghubungkan client Supabase.');
-      window.location.reload();
-    });
-
-    // Reset Pertunjukan (FR-10)
-    btnResetShow.addEventListener('click', () => {
-      const confirmReset = confirm("Peringatan: Seluruh perolehan suara akan diatur ulang untuk pertunjukan berikutnya. Lanjutkan?");
-      if (confirmReset) {
-        const newTitle = prompt("Masukkan nama/judul pertunjukan baru (opsional):", "The Weakling: Syndicate Act II");
-        window.mafiaEngine.resetShow(newTitle);
-        alert("Sesi drama telah diatur ulang untuk pertunjukan baru!");
+    function doReset() {
+      if (confirm('Reset semua suara untuk pertunjukan berikutnya?')) {
+        const title = prompt('Judul pertunjukan baru (kosongkan untuk default):', '');
+        window.mafiaEngine.resetShow(title || undefined);
       }
-    });
+    }
+    btnReset.addEventListener('click', doReset);
+    btnResetMain.addEventListener('click', doReset);
 
-    // Render Dashboard Sesi
+    checkAuth();
+
     function renderDashboard(state) {
-      currentShowTitle.textContent = state.show.title;
+      showTitleEl.textContent = state.show.title;
 
-      let activeSceneLabel = "Tidak ada sesi aktif";
-      let grandTotalVotes = 0;
+      let grandTotal = 0;
+      let activeLabel = 'Tidak ada';
 
-      pollsManagerContainer.innerHTML = '';
+      pollsContainer.innerHTML = '';
 
       state.polls.forEach(poll => {
         const calc = window.mafiaEngine.getPollResults(poll.id);
-        grandTotalVotes += calc.totalVotes;
+        grandTotal += calc.totalVotes;
+        if (poll.status === 'open') activeLabel = `Scene ${poll.scene}`;
 
+        let badgeHtml = '';
         if (poll.status === 'open') {
-          activeSceneLabel = `Scene ${poll.scene} Sedang Dibuka`;
-        }
-
-        const pollCard = document.createElement('div');
-        pollCard.className = `mafia-glass p-5 sm:p-6 border ${poll.status === 'open' ? 'border-emerald-500/60 shadow-lg shadow-emerald-950/40' : poll.status === 'closed' ? 'border-red-800/40' : 'border-yellow-700/30'}`;
-
-        let statusBadgeHtml = '';
-        if (poll.status === 'open') {
-          statusBadgeHtml = `<span class="syndicate-badge badge-open"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> VOTING AKTIF</span>`;
+          badgeHtml = `<span class="badge badge-live"><span class="dot-live"></span> VOTING AKTIF</span>`;
         } else if (poll.status === 'closed') {
-          statusBadgeHtml = `<span class="syndicate-badge badge-closed"><i data-lucide="lock" class="w-3.5 h-3.5"></i> SELESAI / DIKUNCI</span>`;
+          badgeHtml = `<span class="badge badge-closed">SELESAI</span>`;
         } else {
-          statusBadgeHtml = `<span class="syndicate-badge badge-draft"><i data-lucide="clock" class="w-3.5 h-3.5"></i> DRAFT / BELUM DIBUKA</span>`;
+          badgeHtml = `<span class="badge badge-draft">DRAFT</span>`;
         }
 
-        let optionsBreakdown = '';
+        let optRows = '';
         calc.options.forEach(opt => {
-          optionsBreakdown += `
-            <div class="bg-black/40 border border-yellow-900/30 p-3 rounded-xl flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="w-7 h-7 rounded bg-yellow-950 border border-yellow-600/60 text-yellow-400 font-mafia font-bold text-xs flex items-center justify-center">${opt.code}</span>
+          optRows += `
+            <div class="poll-option-row">
+              <div class="poll-option-row-left">
+                <div class="poll-opt-code">${opt.code}</div>
                 <div>
-                  <div class="text-sm font-bold text-gray-200">${opt.label}</div>
-                  <div class="text-[11px] text-gray-400 line-clamp-1">${opt.desc}</div>
+                  <div class="poll-opt-name">${opt.label}</div>
                 </div>
               </div>
-              <div class="text-right">
-                <span class="text-base font-mafia font-bold text-yellow-400">${opt.percentage}%</span>
-                <span class="text-xs text-gray-400 font-mono ml-1.5">(${opt.count} suara)</span>
+              <div style="text-align: right;">
+                <div class="poll-opt-pct">${opt.percentage}%</div>
+                <div class="poll-opt-count">${opt.count} suara</div>
               </div>
             </div>
           `;
         });
 
-        pollCard.innerHTML = `
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-yellow-900/30 pb-3">
-            <div class="flex items-center gap-3">
-              <span class="text-lg font-mafia font-black text-yellow-400">SCENE ${poll.scene}</span>
-              <span class="text-xs text-gray-400 font-mono uppercase">| ${poll.title}</span>
-            </div>
+        let actionHtml = '';
+        if (poll.status !== 'open') {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'open')" class="btn btn-primary btn-sm">
+              Buka Voting
+            </button>
+          `;
+        } else {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'closed')" class="btn btn-danger btn-sm">
+              Tutup Voting
+            </button>
+          `;
+        }
+        if (poll.status === 'closed') {
+          actionHtml += `
+            <button onclick="changePollStatus('${poll.id}', 'draft')" class="btn btn-ghost btn-sm">
+              Ke Draft
+            </button>
+          `;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'poll-card' + (poll.status === 'open' ? ' poll-active' : '');
+        card.innerHTML = `
+          <div class="poll-card-header">
             <div>
-              ${statusBadgeHtml}
+              <div class="poll-scene-label">Scene ${poll.scene}</div>
+              <div class="poll-title-label">${poll.title}</div>
             </div>
+            ${badgeHtml}
           </div>
-
-          <p class="text-sm text-gray-200 mb-4 font-semibold italic">"${poll.question}"</p>
-
-          <!-- Breakdown Opsi & Suara Masuk -->
-          <div class="space-y-2 mb-5">
-            ${optionsBreakdown}
+          <div class="poll-card-body">
+            <p class="poll-question">"${poll.question}"</p>
+            <div class="poll-options-breakdown">${optRows}</div>
           </div>
-
-          <!-- Action Buttons Control (FR-02, FR-03) -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-yellow-900/30">
-            <div class="text-xs font-mono text-gray-400">
-              Total Suara Sesi: <span class="text-yellow-400 font-bold">${calc.totalVotes}</span>
-              ${calc.winner && poll.status === 'closed' ? ` | Pemenang: <span class="text-emerald-400 font-bold">[${calc.winner.code}] ${calc.winner.label}</span>` : ''}
-            </div>
-
-            <div class="flex items-center gap-2">
-              ${poll.status !== 'open' ? `
-                <button onclick="changePollStatus('${poll.id}', 'open')" class="px-4 py-2 rounded-lg btn-mafia-gold text-xs flex items-center gap-1.5 font-bold">
-                  <i data-lucide="play" class="w-3.5 h-3.5"></i> BUKA VOTING SEKARANG
-                </button>
-              ` : `
-                <button onclick="changePollStatus('${poll.id}', 'closed')" class="px-4 py-2 rounded-lg btn-mafia-crimson text-xs flex items-center gap-1.5 font-bold">
-                  <i data-lucide="square" class="w-3.5 h-3.5"></i> KUNCI & TUTUP VOTING
-                </button>
-              `}
-              ${poll.status === 'closed' ? `
-                <button onclick="changePollStatus('${poll.id}', 'draft')" class="px-3 py-2 rounded-lg border border-yellow-800 text-yellow-500 hover:bg-yellow-950/40 text-xs">
-                  Ubah ke Draft
-                </button>
-              ` : ''}
-            </div>
+          <div class="poll-card-footer">
+            <span class="poll-meta-text">
+              Total: <strong style="color: var(--text-hi);">${calc.totalVotes} suara</strong>
+              ${calc.winner && poll.status === 'closed' ? ` &bull; Terpilih: <span style="color: var(--text-mid);">[${calc.winner.code}] ${calc.winner.label}</span>` : ''}
+            </span>
+            <div class="poll-actions">${actionHtml}</div>
           </div>
         `;
-
-        pollsManagerContainer.appendChild(pollCard);
+        pollsContainer.appendChild(card);
       });
 
-      globalActiveSceneText.textContent = activeSceneLabel;
-      globalTotalVotesText.textContent = `${grandTotalVotes} Suara`;
-      lucide.createIcons();
+      statTotal.textContent = grandTotal;
+      statActive.textContent = activeLabel;
+      sidebarStatus.textContent = activeLabel;
     }
 
-    window.changePollStatus = function (pollId, status) {
+    window.changePollStatus = function(pollId, status) {
       window.mafiaEngine.setPollStatus(pollId, status);
     };
 
-    // Sinkronisasi realtime
     window.mafiaEngine.subscribe((state) => {
       renderDashboard(state);
     });
   </script>
 </body>
-
 </html>
