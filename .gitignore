@@ -1,6 +1,7 @@
 .env
 .env.*
 .agents
+js/config.js
 .md
 .sql
 
