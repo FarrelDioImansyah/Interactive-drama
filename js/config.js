@@ -9,5 +9,5 @@
 
 window.APP_CONFIG = {
   SUPABASE_URL: 'https://msxyyagledadbkvotsks.supabase.co',        // Contoh: 'https://abcxyz.supabase.co'
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeHl5YWdsZWRhZGJrdm90c2tzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjYwMDI0NiwiZXhwIjoyMTA4MTc2MjQ2fQ.pvsBnY0N9tiRY0bHGKKHxt49lsXOca0aGS9bjA8QIbU'
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zeHl5YWdsZWRhZGJrdm90c2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MDAyNDYsImV4cCI6MjEwODE3NjI0Nn0.Lf2Aum0_hIVBkVjZ09JjkTjv9wryGFb9DNE7X4fsRV8'
 };
