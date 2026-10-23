@@ -204,7 +204,7 @@
 
     <div style="display: flex; align-items: center; gap: 0.5rem;">
       <span id="voterNameBadge" class="badge badge-draft" style="font-size: 0.68rem;">...</span>
-      <a href="results.html" class="btn btn-ghost" style="min-height: 36px; padding: 0 0.75rem; font-size: 0.75rem;">
+      <a id="headerResultBtn" href="results.html" class="btn btn-ghost" style="min-height: 36px; padding: 0 0.75rem; font-size: 0.75rem; display: none;">
         Lihat Hasil
       </a>
     </div>
@@ -307,6 +307,12 @@
     }
 
     window.mafiaEngine.subscribe((state) => {
+      const headerResultBtn = document.getElementById('headerResultBtn');
+      const hasOpenedSession = state.polls.some(p => p.status === 'open' || p.status === 'closed');
+      if (headerResultBtn) {
+        headerResultBtn.style.display = hasOpenedSession ? 'inline-flex' : 'none';
+      }
+
       const activePoll = state.polls.find(p => p.status === 'open');
       hideAll();
 
@@ -325,7 +331,10 @@
       if (window.mafiaEngine.hasVoted(activePoll.id)) {
         const optId = window.mafiaEngine.getUserVote(activePoll.id);
         const opt = activePoll.options.find(o => o.id === optId);
-        if (opt) votedChoiceEl.textContent = `[${opt.code}] ${opt.label}`;
+        if (opt) {
+          const cleanVotedLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
+          votedChoiceEl.textContent = `[${opt.code}] ${cleanVotedLabel}`;
+        }
         stateVoted.style.display = 'flex';
         return;
       }
@@ -337,6 +346,7 @@
 
       optionsList.innerHTML = '';
       activePoll.options.forEach(opt => {
+        const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'option-card' + (selectedId === opt.id ? ' selected' : '');
@@ -345,8 +355,7 @@
         card.innerHTML = `
           <div class="option-code">${opt.code}</div>
           <div class="option-label">
-            <div class="option-name">${opt.label}</div>
-            ${opt.desc ? `<div class="option-desc">${opt.desc}</div>` : ''}
+            <div class="option-name">${cleanOptLabel}</div>
           </div>
         `;
         optionsList.appendChild(card);

@@ -127,14 +127,14 @@ BEGIN
     VALUES (
         v_show_id,
         4,
-        'Scene 4 — Penentuan Ending (The Final Godfather Act)',
+        'Scene 4 — Penentuan Alur Akhir (The Final Godfather Act)',
         'Bagaimana Radit akan menggunakan kekuasaan puncaknya untuk mengakhiri perseteruan ini?',
         'draft'
     ) RETURNING id INTO v_poll_4_id;
 
     INSERT INTO public.poll_options (poll_id, code, label, description, sort_order) VALUES
-    (v_poll_4_id, 'A', 'Happy Ending: Keadilan', 'Membongkar seluruh jaringan kriminal demi menegakkan hukum baru kota', 1),
-    (v_poll_4_id, 'B', 'Sad Ending: Balas Dendam', 'Menumpas seluruh musuh dalam perang terbuka tanpa ampun hingga hancur bersama', 2),
-    (v_poll_4_id, 'C', 'Secret Ending: Rencana di Balik Penyamaran', 'Mengambil alih takhta tertinggi Mafia dan memerintah dari balik bayangan', 3);
+    (v_poll_4_id, 'A', 'Keadilan', '', 1),
+    (v_poll_4_id, 'B', 'Balas Dendam', '', 2),
+    (v_poll_4_id, 'C', 'Rencana di Balik Penyamaran', '', 3);
 
 END $$;

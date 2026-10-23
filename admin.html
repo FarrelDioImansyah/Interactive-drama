@@ -548,12 +548,13 @@
 
         let optRows = '';
         calc.options.forEach(opt => {
+          const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
           optRows += `
             <div class="poll-option-row">
               <div class="poll-option-row-left">
                 <div class="poll-opt-code">${opt.code}</div>
                 <div>
-                  <div class="poll-opt-name">${opt.label}</div>
+                  <div class="poll-opt-name">${cleanOptLabel}</div>
                 </div>
               </div>
               <div style="text-align: right;">
@@ -586,6 +587,8 @@
           `;
         }
 
+        const cleanWinnerLabel = calc.winner && window.filterEndingText ? window.filterEndingText(calc.winner.label) : (calc.winner ? calc.winner.label : '');
+
         const card = document.createElement('div');
         card.className = 'poll-card' + (poll.status === 'open' ? ' poll-active' : '');
         card.innerHTML = `
@@ -603,7 +606,7 @@
           <div class="poll-card-footer">
             <span class="poll-meta-text">
               Total: <strong style="color: var(--text-hi);">${calc.totalVotes} suara</strong>
-              ${calc.winner && poll.status === 'closed' ? ` &bull; Terpilih: <span style="color: var(--text-mid);">[${calc.winner.code}] ${calc.winner.label}</span>` : ''}
+              ${calc.winner && poll.status === 'closed' ? ` &bull; Terpilih: <span style="color: var(--text-mid);">[${calc.winner.code}] ${cleanWinnerLabel}</span>` : ''}
             </span>
             <div class="poll-actions">${actionHtml}</div>
           </div>

@@ -24,6 +24,16 @@ if (window.supabase && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
   }
 }
 
+// Helper untuk membersihkan label dari teks Good Ending, Bad Ending, Secret Ending, dsb.
+function filterEndingText(text) {
+  if (!text) return '';
+  return text
+    .replace(/^\[?(good|bad|happy|sad|secret|seccret)\s*(ending)?\]?\s*[:-]?\s*/gi, '')
+    .replace(/\b(good|bad|happy|sad|secret|seccret)\s*ending:?\b/gi, '')
+    .trim();
+}
+window.filterEndingText = filterEndingText;
+
 // Default Seed Data untuk offline fallback / initial placeholder
 const DEFAULT_STATE = {
   show: {
@@ -42,14 +52,14 @@ const DEFAULT_STATE = {
           id: 'opt-2-a',
           code: 'A',
           label: 'Membantu Sultan',
-          desc: 'Tunjukkan loyalitas darah dan hadapi konfrontasi langsung dengan geng saingan.',
+          desc: '',
           votesCount: 0
         },
         {
           id: 'opt-2-b',
           code: 'B',
           label: 'Tidak Membantu Sultan',
-          desc: 'Amankan posisi sendiri dalam bayang-bayang mafia dan susun rencana senyap.',
+          desc: '',
           votesCount: 0
         }
       ]
@@ -65,14 +75,14 @@ const DEFAULT_STATE = {
           id: 'opt-3-a',
           code: 'A',
           label: 'Mengalihkan Perhatian',
-          desc: 'Gunakan taktik bawah tanah dan sabotase intelijen untuk memecah perhatian musuh.',
+          desc: '',
           votesCount: 0
         },
         {
           id: 'opt-3-b',
           code: 'B',
           label: 'Menahan Diri',
-          desc: 'Kunci amarah, simpan kekuatan rahasia hingga kartu truf dibuka di meja judi kekuasaan.',
+          desc: '',
           votesCount: 0
         }
       ]
@@ -87,22 +97,22 @@ const DEFAULT_STATE = {
         {
           id: 'opt-4-a',
           code: 'A',
-          label: 'Happy Ending: Keadilan',
-          desc: 'Bongkar seluruh jaringan kriminal demi menegakkan hukum baru di kota.',
+          label: 'Keadilan',
+          desc: '',
           votesCount: 0
         },
         {
           id: 'opt-4-b',
           code: 'B',
-          label: 'Sad Ending: Balas Dendam',
-          desc: 'Tumpas seluruh musuh dalam perang berdarah terbuka hingga hancur bersama.',
+          label: 'Balas Dendam',
+          desc: '',
           votesCount: 0
         },
         {
           id: 'opt-4-c',
           code: 'C',
-          label: 'Secret Ending: Rencana Balik Topeng',
-          desc: 'Rebut takhta tertinggi Mafia dan kendalikan seluruh kota dari balik singgasana gelap.',
+          label: 'Rencana Balik Topeng',
+          desc: '',
           votesCount: 0
         }
       ]
@@ -139,7 +149,18 @@ class MafiaEngine {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
-        return JSON.parse(data);
+        const parsed = JSON.parse(data);
+        if (parsed && parsed.polls) {
+          parsed.polls.forEach(p => {
+            if (p.options) {
+              p.options.forEach(o => {
+                o.label = filterEndingText(o.label);
+                o.desc = '';
+              });
+            }
+          });
+        }
+        return parsed;
       }
     } catch (e) {
       console.warn("Error loading stored state, resetting to default", e);
@@ -234,8 +255,8 @@ class MafiaEngine {
             return {
               id: o.id,
               code: o.code,
-              label: o.label,
-              desc: o.description || '',
+              label: filterEndingText(o.label),
+              desc: '',
               votesCount: count
             };
           });
@@ -454,6 +475,8 @@ class MafiaEngine {
       const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
       return {
         ...opt,
+        label: filterEndingText(opt.label),
+        desc: '',
         count,
         percentage: Number(percentage)
       };
@@ -467,7 +490,10 @@ class MafiaEngine {
       optionsWithPercent.forEach(opt => {
         if (opt.count > maxVotes) {
           maxVotes = opt.count;
-          winner = opt;
+          winner = {
+            ...opt,
+            label: filterEndingText(opt.label)
+          };
           isTie = false;
         } else if (opt.count === maxVotes && maxVotes > 0) {
           isTie = true;

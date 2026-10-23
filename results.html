@@ -273,6 +273,50 @@
       color: var(--text-lo);
       letter-spacing: 0.05em;
     }
+
+    /* WAITING STATE */
+    .results-waiting-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      border: 1px dashed var(--border);
+      border-radius: var(--r-lg);
+      background: rgba(240, 237, 232, 0.02);
+      margin: 1.5rem 0;
+    }
+
+    .waiting-icon-pulse {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .waiting-title {
+      font-family: var(--font-title);
+      font-size: clamp(1.25rem, 3vw, 1.875rem);
+      font-weight: 700;
+      color: var(--text-hi);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .waiting-desc {
+      font-size: 0.95rem;
+      color: var(--text-lo);
+      max-width: 480px;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -293,23 +337,38 @@
     </div>
   </header>
 
-  <!-- PERTANYAAN BESAR PANGGUNG -->
-  <div class="stage-question-wrap">
-    <div class="stage-scene-tag">
-      <span class="live-dot" id="liveDot"></span>
-      <span id="sceneTagEl">SCENE 2</span>
+  <!-- TAMPILAN MENUNGGU (jika belum ada sesi voting yang dibuka) -->
+  <div id="resultsWaiting" class="results-waiting-box" style="display: none;">
+    <div class="waiting-icon-pulse">
+      <svg width="28" height="28" fill="none" stroke="#C03040" stroke-width="1.75" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
     </div>
-    <h2 class="projector-question title-scene" id="questionEl">Memuat pertanyaan sesi...</h2>
+    <h2 class="waiting-title">Sesi Voting Belum Dibuka</h2>
+    <p class="waiting-desc">Hasil voting penonton akan langsung ditampilkan di layar ini secara realtime begitu sesi dibuka oleh sutradara.</p>
   </div>
 
-  <!-- HASIL VOTING BARS -->
-  <div class="result-cards" id="resultCards"></div>
+  <!-- KONTEN HASIL VOTING AKTIF / SELESAI -->
+  <div id="resultsActive" style="display: none; flex-direction: column; flex: 1;">
+    <!-- PERTANYAAN BESAR PANGGUNG -->
+    <div class="stage-question-wrap">
+      <div class="stage-scene-tag">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="sceneTagEl">SCENE 2</span>
+      </div>
+      <h2 class="projector-question title-scene" id="questionEl">Memuat pertanyaan sesi...</h2>
+    </div>
 
-  <!-- WINNER BANNER (saat closed) -->
-  <div class="winner-banner" id="winnerBanner">
-    <p class="winner-banner-label">Hasil Terpilih</p>
-    <h3 class="winner-banner-title" id="winnerTitleEl">...</h3>
-    <p class="winner-banner-sub" id="winnerSubEl">...</p>
+    <!-- HASIL VOTING BARS -->
+    <div class="result-cards" id="resultCards"></div>
+
+    <!-- WINNER BANNER (saat closed) -->
+    <div class="winner-banner" id="winnerBanner">
+      <p class="winner-banner-label">Hasil Terpilih</p>
+      <h3 class="winner-banner-title" id="winnerTitleEl">...</h3>
+      <p class="winner-banner-sub" id="winnerSubEl">...</p>
+    </div>
   </div>
 
   <!-- FOOTER -->
@@ -336,17 +395,39 @@
     const winnerBanner = document.getElementById('winnerBanner');
     const winnerTitleEl = document.getElementById('winnerTitleEl');
     const winnerSubEl = document.getElementById('winnerSubEl');
+    const resultsWaiting = document.getElementById('resultsWaiting');
+    const resultsActive = document.getElementById('resultsActive');
 
     window.mafiaEngine.subscribe((state) => {
       showTitleEl.textContent = state.show.title || 'The Weakling';
 
+      // 1. Cari sesi voting yang sedang dibuka (open)
       let activePoll = state.polls.find(p => p.status === 'open');
       const isLive = !!activePoll;
 
+      // 2. Jika tidak ada yang open, hanya ambil sesi yang sudah selesai (closed)
+      // Jangan pernah menampilkan sesi yang statusnya masih 'draft'
       if (!activePoll) {
-        activePoll = state.polls.find(p => p.status === 'closed') || state.polls[0];
+        const closedPolls = state.polls.filter(p => p.status === 'closed');
+        if (closedPolls.length > 0) {
+          activePoll = closedPolls[closedPolls.length - 1];
+        }
       }
-      if (!activePoll) return;
+
+      // 3. Jika belum ada sesi yang dibuka sama sekali
+      if (!activePoll || activePoll.status === 'draft') {
+        resultsWaiting.style.display = 'flex';
+        resultsActive.style.display = 'none';
+        statusLabelEl.textContent = 'Menunggu sesi dibuka';
+        statusBadgeEl.className = 'badge badge-draft';
+        statusBadgeEl.textContent = 'BELUM DIBUKA';
+        totalEl.textContent = '0';
+        return;
+      }
+
+      // Sesi terbuka (open atau closed)
+      resultsWaiting.style.display = 'none';
+      resultsActive.style.display = 'flex';
 
       const calc = window.mafiaEngine.getPollResults(activePoll.id);
       if (!calc) return;
@@ -374,29 +455,25 @@
           winnerTitleEl.textContent = 'HASIL SERI';
           winnerSubEl.textContent = 'Keputusan akhir diserahkan kepada sutradara panggung.';
         } else if (calc.winner) {
-          winnerTitleEl.textContent = `[${calc.winner.code}] ${calc.winner.label.toUpperCase()}`;
+          const cleanWinner = window.filterEndingText ? window.filterEndingText(calc.winner.label) : calc.winner.label;
+          winnerTitleEl.textContent = `[${calc.winner.code}] ${cleanWinner.toUpperCase()}`;
           const suffix = activePoll.scene === 4
-            ? `Ending resmi terpilih dengan ${calc.winner.percentage}% suara.`
+            ? `Pilihan resmi terpilih dengan ${calc.winner.percentage}% suara.`
             : `Adegan dilanjutkan sesuai pilihan mayoritas (${calc.winner.count} suara / ${calc.winner.percentage}%).`;
           winnerSubEl.textContent = suffix;
         } else {
           winnerTitleEl.textContent = 'TIDAK ADA SUARA';
           winnerSubEl.textContent = 'Voting ditutup tanpa suara penonton masuk.';
         }
-      } else {
-        statusLabelEl.textContent = 'Sesi belum dibuka';
-        statusBadgeEl.className = 'badge badge-draft';
-        statusBadgeEl.textContent = 'DRAFT';
-        liveDot.style.display = 'none';
-        winnerBanner.style.display = 'none';
       }
 
       questionEl.textContent = activePoll.question;
 
-      // Render result cards
+      // Render result cards (tanpa deskripsi & bersihkan ending text)
       resultCards.innerHTML = '';
       calc.options.forEach(opt => {
         const isWin = !isLive && calc.winner && calc.winner.id === opt.id;
+        const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
 
         const card = document.createElement('div');
         card.className = 'result-card' + (isWin ? ' winner' : '');
@@ -407,10 +484,9 @@
             <div class="result-code">${opt.code}</div>
             <div class="result-info">
               <div class="result-label">
-                ${opt.label}
+                ${cleanOptLabel}
                 ${isWin ? '<span class="result-winner-tag">Terpilih</span>' : ''}
               </div>
-              ${opt.desc ? `<div class="result-desc">${opt.desc}</div>` : ''}
             </div>
             <div>
               <div class="result-pct">${opt.percentage}<span style="font-size: 0.45em; font-weight: 600; opacity: 0.8;">%</span></div>
