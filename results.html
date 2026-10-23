@@ -337,19 +337,40 @@
     </div>
   </header>
 
-  <!-- TAMPILAN MENUNGGU (jika belum ada sesi voting yang dibuka) -->
+  <!-- TAMPILAN MENUNGGU (jika belum ada sesi voting yang dibuka ATAU saat sesi voting ditutup) -->
   <div id="resultsWaiting" class="results-waiting-box" style="display: none;">
-    <div class="waiting-icon-pulse">
+    <div class="waiting-icon-pulse" id="waitingIconWrap">
       <svg width="28" height="28" fill="none" stroke="#C03040" stroke-width="1.75" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 6v6l4 2"/>
       </svg>
     </div>
-    <h2 class="waiting-title">Sesi Voting Belum Dibuka</h2>
-    <p class="waiting-desc">Hasil voting penonton akan langsung ditampilkan di layar ini secara realtime begitu sesi dibuka oleh sutradara.</p>
+
+    <div id="waitingBadgeWrap" style="margin-bottom: 0.5rem; display: none;">
+      <span class="badge badge-closed">SESI DITUTUP &bull; SELESAI</span>
+    </div>
+
+    <h2 class="waiting-title" id="waitingTitleEl">Sesi Voting Belum Dibuka</h2>
+    <p class="waiting-desc" id="waitingDescEl">Hasil voting penonton akan langsung ditampilkan di layar ini secara realtime begitu sesi dibuka oleh sutradara.</p>
+
+    <!-- HASIL VOTING DI DALAM SESI MENUNGGU (saat vote ditutup) -->
+    <div id="waitingResultBox" style="display: none; width: 100%; max-width: 680px; margin-top: 1.5rem;">
+      <div class="winner-banner" id="waitingWinnerBanner" style="display: block; margin-top: 0; text-align: left;">
+        <p class="winner-banner-label">Hasil Terpilih &bull; Keputusan Dewan Penonton</p>
+        <h3 class="winner-banner-title" id="waitingWinnerTitle">...</h3>
+        <p class="winner-banner-sub" id="waitingWinnerSub">...</p>
+      </div>
+
+      <!-- Detail perolehan suara -->
+      <div id="waitingBarsList" style="display: flex; flex-direction: column; gap: 0.625rem; margin-top: 1rem;"></div>
+
+      <p style="font-size: 0.72rem; color: var(--text-lo); margin-top: 1.25rem; letter-spacing: 0.08em; text-transform: uppercase;">
+        Menunggu sutradara membuka sesi panggung berikutnya &bull; Pilihan terkunci
+      </p>
+    </div>
   </div>
 
-  <!-- KONTEN HASIL VOTING AKTIF / SELESAI -->
+  <!-- KONTEN HASIL VOTING AKTIF / LIVE SAAT VOTING DIBUKA -->
   <div id="resultsActive" style="display: none; flex-direction: column; flex: 1;">
     <!-- PERTANYAAN BESAR PANGGUNG -->
     <div class="stage-question-wrap">
@@ -362,13 +383,6 @@
 
     <!-- HASIL VOTING BARS -->
     <div class="result-cards" id="resultCards"></div>
-
-    <!-- WINNER BANNER (saat closed) -->
-    <div class="winner-banner" id="winnerBanner">
-      <p class="winner-banner-label">Hasil Terpilih</p>
-      <h3 class="winner-banner-title" id="winnerTitleEl">...</h3>
-      <p class="winner-banner-sub" id="winnerSubEl">...</p>
-    </div>
   </div>
 
   <!-- FOOTER -->
@@ -392,111 +406,170 @@
     const liveDot = document.getElementById('liveDot');
     const questionEl = document.getElementById('questionEl');
     const resultCards = document.getElementById('resultCards');
-    const winnerBanner = document.getElementById('winnerBanner');
-    const winnerTitleEl = document.getElementById('winnerTitleEl');
-    const winnerSubEl = document.getElementById('winnerSubEl');
     const resultsWaiting = document.getElementById('resultsWaiting');
     const resultsActive = document.getElementById('resultsActive');
+    const waitingBadgeWrap = document.getElementById('waitingBadgeWrap');
+    const waitingTitleEl = document.getElementById('waitingTitleEl');
+    const waitingDescEl = document.getElementById('waitingDescEl');
+    const waitingResultBox = document.getElementById('waitingResultBox');
+    const waitingWinnerTitle = document.getElementById('waitingWinnerTitle');
+    const waitingWinnerSub = document.getElementById('waitingWinnerSub');
+    const waitingBarsList = document.getElementById('waitingBarsList');
+
+    let previousStatus = null;
+    let revealTimer = null;
 
     window.mafiaEngine.subscribe((state) => {
       showTitleEl.textContent = state.show.title || 'The Weakling';
 
       // 1. Cari sesi voting yang sedang dibuka (open)
-      let activePoll = state.polls.find(p => p.status === 'open');
-      const isLive = !!activePoll;
+      const openPoll = state.polls.find(p => p.status === 'open');
 
-      // 2. Jika tidak ada yang open, hanya ambil sesi yang sudah selesai (closed)
-      // Jangan pernah menampilkan sesi yang statusnya masih 'draft'
-      if (!activePoll) {
-        const closedPolls = state.polls.filter(p => p.status === 'closed');
-        if (closedPolls.length > 0) {
-          activePoll = closedPolls[closedPolls.length - 1];
+      // 2. JIKA ADA SESI YANG BUKA (LIVE): Buka Layar Hasil Aktif
+      if (openPoll) {
+        if (revealTimer) {
+          clearTimeout(revealTimer);
+          revealTimer = null;
         }
-      }
+        previousStatus = 'open';
 
-      // 3. Jika belum ada sesi yang dibuka sama sekali
-      if (!activePoll || activePoll.status === 'draft') {
-        resultsWaiting.style.display = 'flex';
-        resultsActive.style.display = 'none';
-        statusLabelEl.textContent = 'Menunggu sesi dibuka';
-        statusBadgeEl.className = 'badge badge-draft';
-        statusBadgeEl.textContent = 'BELUM DIBUKA';
-        totalEl.textContent = '0';
-        return;
-      }
+        resultsWaiting.style.display = 'none';
+        resultsActive.style.display = 'flex';
 
-      // Sesi terbuka (open atau closed)
-      resultsWaiting.style.display = 'none';
-      resultsActive.style.display = 'flex';
+        const calc = window.mafiaEngine.getPollResults(openPoll.id);
+        if (!calc) return;
 
-      const calc = window.mafiaEngine.getPollResults(activePoll.id);
-      if (!calc) return;
+        totalEl.textContent = calc.totalVotes;
+        const cleanSceneTitle = window.cleanTitle ? window.cleanTitle(openPoll.title, openPoll.scene) : (openPoll.title || '');
+        sceneTagEl.textContent = `SCENE ${openPoll.scene}${cleanSceneTitle ? ` — ${cleanSceneTitle.toUpperCase()}` : ''}`;
 
-      // Update header
-      totalEl.textContent = calc.totalVotes;
-      const cleanSceneTitle = window.cleanTitle ? window.cleanTitle(activePoll.title, activePoll.scene) : (activePoll.title || '');
-      sceneTagEl.textContent = `SCENE ${activePoll.scene}${cleanSceneTitle ? ` — ${cleanSceneTitle.toUpperCase()}` : ''}`;
-
-      // Status
-      if (activePoll.status === 'open') {
         statusLabelEl.textContent = 'Voting sedang berlangsung';
         statusBadgeEl.className = 'badge badge-live';
         statusBadgeEl.innerHTML = '<span class="dot-live"></span> LIVE';
         liveDot.style.display = '';
-        winnerBanner.style.display = 'none';
-      } else if (activePoll.status === 'closed') {
+
+        questionEl.textContent = openPoll.question;
+
+        // Render result cards live
+        resultCards.innerHTML = '';
+        calc.options.forEach(opt => {
+          const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
+          const card = document.createElement('div');
+          card.className = 'result-card';
+          card.innerHTML = `
+            <div class="result-bar-bg" style="width: ${opt.percentage}%;"></div>
+            <div class="result-card-content">
+              <div class="result-code">${opt.code}</div>
+              <div class="result-info">
+                <div class="result-label">${cleanOptLabel}</div>
+              </div>
+              <div>
+                <div class="result-pct">${opt.percentage}<span style="font-size: 0.45em; font-weight: 600; opacity: 0.8;">%</span></div>
+                <div class="result-count">${opt.count} suara</div>
+              </div>
+            </div>
+          `;
+          resultCards.appendChild(card);
+        });
+        return;
+      }
+
+      // 3. JIKA TIDAK ADA YANG BUKA, CEK SESI TERAKHIR YANG SUDAH DITUTUP (CLOSED)
+      const closedPolls = state.polls.filter(p => p.status === 'closed');
+      const closedPoll = closedPolls.length > 0 ? closedPolls[closedPolls.length - 1] : null;
+
+      if (closedPoll) {
+        const calc = window.mafiaEngine.getPollResults(closedPoll.id);
+        totalEl.textContent = calc ? calc.totalVotes : 0;
         statusLabelEl.textContent = 'Sesi ini telah ditutup';
         statusBadgeEl.className = 'badge badge-closed';
         statusBadgeEl.textContent = 'SELESAI';
-        liveDot.style.display = 'none';
 
-        // Winner banner
-        winnerBanner.style.display = 'block';
-        if (calc.isTie) {
-          winnerTitleEl.textContent = 'HASIL SERI';
-          winnerSubEl.textContent = 'Keputusan akhir diserahkan kepada sutradara panggung.';
-        } else if (calc.winner) {
-          const cleanWinner = window.filterEndingText ? window.filterEndingText(calc.winner.label) : calc.winner.label;
-          winnerTitleEl.textContent = `[${calc.winner.code}] ${cleanWinner.toUpperCase()}`;
-          const suffix = activePoll.scene === 4
-            ? `Pilihan resmi terpilih dengan ${calc.winner.percentage}% suara.`
-            : `Adegan dilanjutkan sesuai pilihan mayoritas (${calc.winner.count} suara / ${calc.winner.percentage}%).`;
-          winnerSubEl.textContent = suffix;
+        resultsActive.style.display = 'none';
+        resultsWaiting.style.display = 'flex';
+        waitingBadgeWrap.style.display = 'block';
+
+        const cleanSceneTitle = window.cleanTitle ? window.cleanTitle(closedPoll.title, closedPoll.scene) : (closedPoll.title || '');
+        const cleanWinner = calc && calc.winner && window.filterEndingText ? window.filterEndingText(calc.winner.label) : (calc && calc.winner ? calc.winner.label : '');
+
+        const renderClosedResult = () => {
+          waitingTitleEl.textContent = 'Menunggu Sesi Berikutnya';
+          waitingDescEl.textContent = `Voting Scene ${closedPoll.scene}${cleanSceneTitle ? ` (${cleanSceneTitle})` : ''} telah ditutup. Hasil keputusan penonton terpilih:`;
+          waitingResultBox.style.display = 'block';
+
+          if (calc) {
+            if (calc.isTie) {
+              waitingWinnerTitle.textContent = 'HASIL SERI';
+              waitingWinnerSub.textContent = 'Keputusan akhir diserahkan kepada sutradara panggung.';
+            } else if (calc.winner) {
+              waitingWinnerTitle.textContent = `[${calc.winner.code}] ${cleanWinner.toUpperCase()}`;
+              waitingWinnerSub.textContent = `Pilihan resmi terpilih dengan ${calc.winner.count} suara (${calc.winner.percentage}%).`;
+            } else {
+              waitingWinnerTitle.textContent = 'TIDAK ADA SUARA';
+              waitingWinnerSub.textContent = 'Voting ditutup tanpa suara penonton masuk.';
+            }
+
+            // Render mini bars
+            waitingBarsList.innerHTML = '';
+            calc.options.forEach(opt => {
+              const isWin = calc.winner && calc.winner.id === opt.id;
+              const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
+              const row = document.createElement('div');
+              row.className = 'result-card' + (isWin ? ' winner' : '');
+              row.style.padding = '0.75rem 1rem';
+              row.innerHTML = `
+                <div class="result-bar-bg" style="width: ${opt.percentage}%;"></div>
+                <div class="result-card-content">
+                  <div class="result-code" style="width: 36px; height: 36px; font-size: 1rem;">${opt.code}</div>
+                  <div class="result-info">
+                    <div class="result-label" style="font-size: 1rem;">
+                      ${cleanOptLabel}
+                      ${isWin ? '<span class="result-winner-tag">Terpilih</span>' : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="result-pct" style="font-size: 1.5rem;">${opt.percentage}<span style="font-size: 0.5em;">%</span></div>
+                    <div class="result-count">${opt.count} suara</div>
+                  </div>
+                </div>
+              `;
+              waitingBarsList.appendChild(row);
+            });
+          }
+        };
+
+        // Jika vote baru saja ditutup dari status open: masuk sesi menunggu dulu, lalu hasil keluar
+        if (previousStatus === 'open') {
+          waitingTitleEl.textContent = 'Voting Ditutup';
+          waitingDescEl.textContent = 'Merekap hasil keputusan dewan penonton...';
+          waitingResultBox.style.display = 'none';
+
+          if (revealTimer) clearTimeout(revealTimer);
+          revealTimer = setTimeout(() => {
+            renderClosedResult();
+            revealTimer = null;
+          }, 1200);
         } else {
-          winnerTitleEl.textContent = 'TIDAK ADA SUARA';
-          winnerSubEl.textContent = 'Voting ditutup tanpa suara penonton masuk.';
+          renderClosedResult();
         }
+
+        previousStatus = 'closed';
+        return;
       }
 
-      questionEl.textContent = activePoll.question;
+      // 4. KONDISI AWAL (DRAFT / BELUM PERNAH ADA SESI YANG DIBUKA)
+      resultsActive.style.display = 'none';
+      resultsWaiting.style.display = 'flex';
+      waitingBadgeWrap.style.display = 'none';
+      waitingTitleEl.textContent = 'Sesi Voting Belum Dibuka';
+      waitingDescEl.textContent = 'Hasil voting penonton akan langsung ditampilkan di layar ini secara realtime begitu sesi dibuka oleh sutradara.';
+      waitingResultBox.style.display = 'none';
 
-      // Render result cards (tanpa deskripsi & bersihkan ending text)
-      resultCards.innerHTML = '';
-      calc.options.forEach(opt => {
-        const isWin = !isLive && calc.winner && calc.winner.id === opt.id;
-        const cleanOptLabel = window.filterEndingText ? window.filterEndingText(opt.label) : opt.label;
-
-        const card = document.createElement('div');
-        card.className = 'result-card' + (isWin ? ' winner' : '');
-
-        card.innerHTML = `
-          <div class="result-bar-bg" style="width: ${opt.percentage}%;"></div>
-          <div class="result-card-content">
-            <div class="result-code">${opt.code}</div>
-            <div class="result-info">
-              <div class="result-label">
-                ${cleanOptLabel}
-                ${isWin ? '<span class="result-winner-tag">Terpilih</span>' : ''}
-              </div>
-            </div>
-            <div>
-              <div class="result-pct">${opt.percentage}<span style="font-size: 0.45em; font-weight: 600; opacity: 0.8;">%</span></div>
-              <div class="result-count">${opt.count} suara</div>
-            </div>
-          </div>
-        `;
-        resultCards.appendChild(card);
-      });
+      statusLabelEl.textContent = 'Menunggu sesi dibuka';
+      statusBadgeEl.className = 'badge badge-draft';
+      statusBadgeEl.textContent = 'BELUM DIBUKA';
+      totalEl.textContent = '0';
+      previousStatus = 'draft';
     });
   </script>
 </body>

@@ -220,8 +220,15 @@
           <path d="M12 6v6l4 2"/>
         </svg>
       </div>
-      <h2 class="state-title">Menunggu Sesi Dibuka</h2>
-      <p class="state-desc">Sutradara belum membuka voting. Halaman ini akan otomatis memperbarui pilihan saat adegan dimulai.</p>
+      <h2 class="state-title" id="waitingTitleEl">Menunggu Sesi Dibuka</h2>
+      <p class="state-desc" id="waitingDescEl">Sutradara belum membuka voting. Halaman ini akan otomatis memperbarui pilihan saat adegan dimulai.</p>
+
+      <!-- Box hasil vote yang keluar di dalam sesi menunggu -->
+      <div id="waitingClosedVoteBox" class="voted-choice-box" style="display: none; width: 100%; max-width: 320px; margin-top: 0.75rem;">
+        <p class="choice-label-sm" style="color: #E07080;">Hasil Terpilih Sesi Sebelumnya</p>
+        <p id="waitingClosedWinnerEl" class="choice-value" style="font-size: 1rem; color: #fff;">...</p>
+        <p id="waitingClosedUserVoteEl" style="font-size: 0.75rem; color: var(--text-lo); margin-top: 0.35rem;">...</p>
+      </div>
     </div>
 
     <!-- STATE 2: VOTING AKTIF -->
@@ -317,11 +324,47 @@
       hideAll();
 
       if (!activePoll) {
-        const closed = state.polls.find(p => p.status === 'closed');
-        if (closed && window.mafiaEngine.hasVoted(closed.id)) {
-          stateClosed.style.display = 'flex';
+        const closedPolls = state.polls.filter(p => p.status === 'closed');
+        const closed = closedPolls.length > 0 ? closedPolls[closedPolls.length - 1] : null;
+
+        stateWaiting.style.display = 'flex';
+
+        const waitingTitleEl = document.getElementById('waitingTitleEl');
+        const waitingDescEl = document.getElementById('waitingDescEl');
+        const waitingClosedVoteBox = document.getElementById('waitingClosedVoteBox');
+        const waitingClosedWinnerEl = document.getElementById('waitingClosedWinnerEl');
+        const waitingClosedUserVoteEl = document.getElementById('waitingClosedUserVoteEl');
+
+        if (closed) {
+          const calc = window.mafiaEngine.getPollResults(closed.id);
+          const cleanWinner = calc && calc.winner && window.filterEndingText ? window.filterEndingText(calc.winner.label) : (calc && calc.winner ? calc.winner.label : '');
+
+          waitingTitleEl.textContent = 'Menunggu Sesi Berikutnya';
+          waitingDescEl.textContent = `Voting Scene ${closed.scene} telah ditutup. Aktor sedang memainkan adegan di panggung.`;
+          waitingClosedVoteBox.style.display = 'block';
+
+          if (calc && calc.winner) {
+            waitingClosedWinnerEl.textContent = `[${calc.winner.code}] ${cleanWinner} (${calc.winner.percentage}%)`;
+          } else {
+            waitingClosedWinnerEl.textContent = 'Tidak Ada Pemenang';
+          }
+
+          if (window.mafiaEngine.hasVoted(closed.id)) {
+            const optId = window.mafiaEngine.getUserVote(closed.id);
+            const myOpt = closed.options.find(o => o.id === optId);
+            if (myOpt) {
+              const cleanMy = window.filterEndingText ? window.filterEndingText(myOpt.label) : myOpt.label;
+              waitingClosedUserVoteEl.textContent = `Pilihan Anda: [${myOpt.code}] ${cleanMy}`;
+            } else {
+              waitingClosedUserVoteEl.textContent = `Total Suara Masuk: ${calc ? calc.totalVotes : 0}`;
+            }
+          } else {
+            waitingClosedUserVoteEl.textContent = `Total Suara Masuk: ${calc ? calc.totalVotes : 0}`;
+          }
         } else {
-          stateWaiting.style.display = 'flex';
+          waitingTitleEl.textContent = 'Menunggu Sesi Dibuka';
+          waitingDescEl.textContent = 'Sutradara belum membuka voting. Halaman ini akan otomatis memperbarui pilihan saat adegan dimulai.';
+          waitingClosedVoteBox.style.display = 'none';
         }
         return;
       }
