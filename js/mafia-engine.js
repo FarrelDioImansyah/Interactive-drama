@@ -28,11 +28,25 @@ if (window.supabase && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
 function filterEndingText(text) {
   if (!text) return '';
   return text
+    .replace(/penentuan\s*(ending|alur\s*akhir)?\s*/gi, '')
     .replace(/^\[?(good|bad|happy|sad|secret|seccret)\s*(ending)?\]?\s*[:-]?\s*/gi, '')
     .replace(/\b(good|bad|happy|sad|secret|seccret)\s*ending:?\b/gi, '')
+    .replace(/\bending\b/gi, '')
+    .replace(/\s*—\s*—\s*/g, ' — ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 window.filterEndingText = filterEndingText;
+
+function cleanTitle(title, scene) {
+  if (!title) return '';
+  let t = filterEndingText(title);
+  if (scene) {
+    t = t.replace(new RegExp(`^scene\\s*${scene}\\s*[—:-]\\s*`, 'i'), '');
+  }
+  return t.replace(/\s+/g, ' ').trim();
+}
+window.cleanTitle = cleanTitle;
 
 // Default Seed Data untuk offline fallback / initial placeholder
 const DEFAULT_STATE = {
@@ -44,7 +58,7 @@ const DEFAULT_STATE = {
     {
       id: 'poll-scene-2',
       scene: 2,
-      title: 'SCENE 2 — UNDERBOSS DILEMMA',
+      title: 'UNDERBOSS DILEMMA',
       question: 'Jika kalian berada di posisi Radit saat berhadapan dengan tekanan sindikat, apa yang akan kalian lakukan?',
       status: 'closed',
       options: [
@@ -67,7 +81,7 @@ const DEFAULT_STATE = {
     {
       id: 'poll-scene-3',
       scene: 3,
-      title: 'SCENE 3 — BLOOD & BETRAYAL',
+      title: 'BLOOD & BETRAYAL',
       question: 'Apa langkah strategis Radit ketika intimidasi dan perundungan kian tak terkendali?',
       status: 'draft',
       options: [
@@ -90,7 +104,7 @@ const DEFAULT_STATE = {
     {
       id: 'poll-scene-4',
       scene: 4,
-      title: 'SCENE 4 — THE FINAL GODFATHER ACT',
+      title: 'THE FINAL GODFATHER ACT',
       question: 'Bagaimana Radit akan menggunakan kekuasaan puncaknya untuk menuntaskan takdir pertunjukan?',
       status: 'draft',
       options: [
@@ -152,6 +166,7 @@ class MafiaEngine {
         const parsed = JSON.parse(data);
         if (parsed && parsed.polls) {
           parsed.polls.forEach(p => {
+            p.title = cleanTitle(p.title, p.scene);
             if (p.options) {
               p.options.forEach(o => {
                 o.label = filterEndingText(o.label);
@@ -264,7 +279,7 @@ class MafiaEngine {
         return {
           id: p.id,
           scene: p.scene,
-          title: p.title,
+          title: cleanTitle(p.title, p.scene),
           question: p.question,
           status: p.status, // draft, open, closed
           options: opts

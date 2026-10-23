@@ -434,7 +434,8 @@
 
       // Update header
       totalEl.textContent = calc.totalVotes;
-      sceneTagEl.textContent = `SCENE ${activePoll.scene} — ${activePoll.title.toUpperCase()}`;
+      const cleanSceneTitle = window.cleanTitle ? window.cleanTitle(activePoll.title, activePoll.scene) : (activePoll.title || '');
+      sceneTagEl.textContent = `SCENE ${activePoll.scene}${cleanSceneTitle ? ` — ${cleanSceneTitle.toUpperCase()}` : ''}`;
 
       // Status
       if (activePoll.status === 'open') {

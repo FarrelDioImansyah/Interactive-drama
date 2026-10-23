@@ -99,35 +99,35 @@ BEGIN
     VALUES (
         v_show_id,
         2,
-        'Scene 2 — Respons Awal Radit (Underboss Dilemma)',
+        'Scene 2 — Underboss Dilemma',
         'Jika kalian berada di posisi Radit di hadapan tekanan sindikat, apa yang akan kalian lakukan?',
         'draft'
     ) RETURNING id INTO v_poll_2_id;
 
     INSERT INTO public.poll_options (poll_id, code, label, description, sort_order) VALUES
-    (v_poll_2_id, 'A', 'Membantu Sultan', 'Tunjukkan loyalitas darah dan hadapi konfrontasi langsung dengan geng saingan', 1),
-    (v_poll_2_id, 'B', 'Tidak Membantu Sultan', 'Amankan posisi sendiri dalam bayang-bayang mafia dan susun rencana senyap', 2);
+    (v_poll_2_id, 'A', 'Membantu Sultan', '', 1),
+    (v_poll_2_id, 'B', 'Tidak Membantu Sultan', '', 2);
 
     -- SCENE 3
     INSERT INTO public.polls (show_id, scene, title, question, status)
     VALUES (
         v_show_id,
         3,
-        'Scene 3 — Eskalasi Konflik (Blood & Betrayal)',
+        'Scene 3 — Blood & Betrayal',
         'Apa yang sebaiknya Radit lakukan ketika intimidasi dan perundungan semakin tak terkendali?',
         'draft'
     ) RETURNING id INTO v_poll_3_id;
 
     INSERT INTO public.poll_options (poll_id, code, label, description, sort_order) VALUES
-    (v_poll_3_id, 'A', 'Mengalihkan Perhatian', 'Gunakan trik intelijen bawah tanah untuk memecah belah kubu musuh', 1),
-    (v_poll_3_id, 'B', 'Menahan Diri', 'Simpan kekuatan rahasia hingga kartu truf terakhir terbuka di meja judi kekuasaan', 2);
+    (v_poll_3_id, 'A', 'Mengalihkan Perhatian', '', 1),
+    (v_poll_3_id, 'B', 'Menahan Diri', '', 2);
 
     -- SCENE 4
     INSERT INTO public.polls (show_id, scene, title, question, status)
     VALUES (
         v_show_id,
         4,
-        'Scene 4 — Penentuan Alur Akhir (The Final Godfather Act)',
+        'Scene 4 — The Final Godfather Act',
         'Bagaimana Radit akan menggunakan kekuasaan puncaknya untuk mengakhiri perseteruan ini?',
         'draft'
     ) RETURNING id INTO v_poll_4_id;

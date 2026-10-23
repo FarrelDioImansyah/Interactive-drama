@@ -588,6 +588,7 @@
         }
 
         const cleanWinnerLabel = calc.winner && window.filterEndingText ? window.filterEndingText(calc.winner.label) : (calc.winner ? calc.winner.label : '');
+        const cleanCardTitle = window.cleanTitle ? window.cleanTitle(poll.title, poll.scene) : poll.title;
 
         const card = document.createElement('div');
         card.className = 'poll-card' + (poll.status === 'open' ? ' poll-active' : '');
@@ -595,7 +596,7 @@
           <div class="poll-card-header">
             <div>
               <div class="poll-scene-label">Scene ${poll.scene}</div>
-              <div class="poll-title-label">${poll.title}</div>
+              <div class="poll-title-label">${cleanCardTitle}</div>
             </div>
             ${badgeHtml}
           </div>
