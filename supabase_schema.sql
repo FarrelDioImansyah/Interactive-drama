@@ -105,8 +105,8 @@ BEGIN
     ) RETURNING id INTO v_poll_2_id;
 
     INSERT INTO public.poll_options (poll_id, code, label, description, sort_order) VALUES
-    (v_poll_2_id, 'A', 'Membantu Sultan', '', 1),
-    (v_poll_2_id, 'B', 'Tidak Membantu Sultan', '', 2);
+    (v_poll_2_id, 'A', 'Membantu Faisal', '', 1),
+    (v_poll_2_id, 'B', 'Tidak Membantu Faisal', '', 2);
 
     -- SCENE 3
     INSERT INTO public.polls (show_id, scene, title, question, status)

@@ -32,6 +32,8 @@ function filterEndingText(text) {
     .replace(/^\[?(good|bad|happy|sad|secret|seccret)\s*(ending)?\]?\s*[:-]?\s*/gi, '')
     .replace(/\b(good|bad|happy|sad|secret|seccret)\s*ending:?\b/gi, '')
     .replace(/\bending\b/gi, '')
+    .replace(/\bSultan\b/g, 'Faisal')
+    .replace(/\bsultan\b/g, 'faisal')
     .replace(/\s*—\s*—\s*/g, ' — ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -65,14 +67,14 @@ const DEFAULT_STATE = {
         {
           id: 'opt-2-a',
           code: 'A',
-          label: 'Membantu Sultan',
+          label: 'Membantu Faisal',
           desc: '',
           votesCount: 0
         },
         {
           id: 'opt-2-b',
           code: 'B',
-          label: 'Tidak Membantu Sultan',
+          label: 'Tidak Membantu Faisal',
           desc: '',
           votesCount: 0
         }
